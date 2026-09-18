@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #FFFFFF;
+    --surface: #F5F6FA;
+    --surface-2: #EAEBF3;
+    --ink: #06070C;
+    --ink-muted: #5B5D6B;
+    --line: rgba(6, 7, 12, 0.10);
+    --accent-a: #3E63FF;
+    --accent-b: #B23BFF;
+    --accent-c: #00E0C0;
+    --glow: rgba(62, 99, 255, 0.25);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #05060A;
+      --surface: #0D0F16;
+      --surface-2: #151824;
+      --ink: #F2F5FF;
+      --ink-muted: #8D90A6;
+      --line: rgba(242, 245, 255, 0.09);
+      --accent-a: #5C87FF;
+      --accent-b: #C060FF;
+      --accent-c: #17F0CB;
+      --glow: rgba(92, 135, 255, 0.35);
+    }
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Sora', sans-serif;
+  }
+}
+
+.mono-numbers {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Plasma text gradient utility */
+.plasma-text {
+  background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.plasma-bg {
+  background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
+}
+
+.glass-surface {
+  background: var(--surface);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--line);
+}
+
+.glass-panel {
+  background: rgba(13, 15, 22, 0.4);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--line);
+}
+
+@media (prefers-color-scheme: light) {
+  .glass-panel {
+    background: rgba(245, 246, 250, 0.5);
+  }
+}
+
+/* Basic 3D setup */
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+.perspective-container {
+  perspective: 1000px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

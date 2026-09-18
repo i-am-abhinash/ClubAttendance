@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && getUserData().role == 'Admin';
+    }
+    
+    function isLeader() {
+      return isAuthenticated() && getUserData().role == 'Team Leader';
+    }
+    
+    function isMember() {
+      return isAuthenticated() && getUserData().role == 'Member';
+    }
+    
+    function userTeamId() {
+      return getUserData().teamId;
+    }
+
+    match /teams/{teamId} {
+      // Anyone logged in can read teams
+      allow read: if isAuthenticated();
+      // Only Admin can create/update/delete teams
+      allow write: if isAdmin();
+    }
+    
+    match /users/{userId} {
+      // Allow anyone to read to check if an admin exists
+      allow read: if true;
+      // Allow admins to update/delete, and allow users to create/update their own profile
+      allow write: if isAdmin() || (isAuthenticated() && request.auth.uid == userId);
+    }
+    
+    match /attendance/{recordId} {
+      // Read rules
+      allow read: if isAdmin() 
+                  || (isLeader() && resource.data.teamId == userTeamId())
+                  || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      
+      // Create rules
+      // Admin can create for anyone
+      // Leader can create only for their team members
+      // Member cannot create
+      allow create: if isAdmin() 
+                    || (isLeader() && request.resource.data.teamId == userTeamId());
+      
+      // Update rules
+      // Only Admin can edit.
+      // Must be the same day as it was created (server time comparison).
+      // Assuming `markedAt` is a Timestamp.
+      allow update: if isAdmin() 
+                    && request.time.date() == resource.data.markedAt.date();
+                    
+      // Delete rules - Not specified, maybe Admin only
+      allow delete: if isAdmin() && request.time.date() == resource.data.markedAt.date();
+    }
+  }
+}
