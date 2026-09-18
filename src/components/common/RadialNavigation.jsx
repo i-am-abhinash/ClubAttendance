@@ -121,10 +121,6 @@ const RadialNavigation = () => {
           isOpen ? "bg-slate-900/5 backdrop-blur-[1px] opacity-100 pointer-events-auto" : "opacity-0"
         )}
         onClick={() => setIsOpen(false)}
-        onMouseEnter={() => {
-          // If the mouse hits the backdrop and stops, it's not in the aside. 
-          // So it's safe to let the timeout run.
-        }}
       />
 
       <aside 
@@ -211,7 +207,8 @@ const RadialNavigation = () => {
                 
                 <div 
                   className={clsx(
-                    "absolute top-[calc(100%+8px)] text-[12px] sm:text-[13px] font-medium whitespace-nowrap transition-colors duration-200 pointer-events-none text-center tracking-wide",
+                    "absolute top-[calc(100%+8px)] text-[12px] sm:text-[13px] font-medium whitespace-nowrap transition-all duration-200 pointer-events-none text-center tracking-wide",
+                    "opacity-0 -translate-y-1 group-hover:opacity-100 group-hover:translate-y-0",
                     isActive ? "text-theme-accent font-bold" : "text-theme-text group-hover:text-theme-primary font-semibold",
                     item.isLogout && "group-hover:!text-theme-absent"
                   )}
