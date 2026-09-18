@@ -1,60 +1,71 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Sidebar from './Sidebar';
-import NetworkBackground from './NetworkBackground';
 import { useAuth } from '../../context/AuthContext';
-import { Menu } from 'lucide-react';
+import { Menu, Bell } from 'lucide-react';
 
-const Layout = ({ children, title }) => {
+const Layout = ({ children, title, description }) => {
   const { user } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden text-theme-ink relative bg-transparent">
-      <div className="z-10 flex h-full w-full relative">
-        <Sidebar />
-        
-        {/* Mobile Sidebar overlay */}
-        {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 flex md:hidden">
-            <div className="fixed inset-0 bg-theme-bg/90 backdrop-blur-md" onClick={() => setMobileMenuOpen(false)}></div>
-            <div className="relative flex w-24 flex-1 flex-col items-center pt-6">
-              <Sidebar />
+    <div className="flex h-screen bg-theme-bg overflow-hidden text-theme-text font-sans">
+      <Sidebar />
+      
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 flex md:hidden">
+          <div className="fixed inset-0 bg-theme-primary/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}></div>
+          <div className="relative bg-white w-[260px] h-full shadow-2xl">
+            <Sidebar />
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col flex-1 w-0 overflow-hidden">
+        {/* Top Header */}
+        <header className="h-20 shrink-0 bg-white border-b border-theme-border flex items-center justify-between px-6 lg:px-10 z-10">
+          <div className="flex items-center gap-4">
+            <button 
+              type="button" 
+              className="p-2 -ml-2 text-theme-muted hover:text-theme-text md:hidden rounded-lg hover:bg-theme-bg" 
+              onClick={() => setMobileMenuOpen(true)}
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+            <div className="flex flex-col">
+              <h1 className="text-xl font-bold tracking-tight text-theme-primary">{title}</h1>
+              {description && (
+                <p className="text-sm font-medium text-theme-text-secondary">{description}</p>
+              )}
             </div>
           </div>
-        )}
 
-        <div className="flex flex-col flex-1 w-0 overflow-hidden">
-          <header className="flex shrink-0 items-start justify-between px-6 sm:px-8 lg:px-12 z-10 pt-8 pb-4">
-            <button type="button" className="-m-2.5 p-2.5 text-theme-ink md:hidden" onClick={() => setMobileMenuOpen(true)}>
-              <span className="sr-only">Open sidebar</span>
-              <Menu className="h-6 w-6" aria-hidden="true" />
+          <div className="flex items-center gap-6">
+            <button className="text-theme-muted hover:text-theme-primary transition-colors relative">
+              <Bell className="w-5 h-5" />
+              <span className="absolute top-0 right-0 w-2 h-2 bg-theme-accent rounded-full border-2 border-white"></span>
             </button>
             
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center gap-3 text-sm text-theme-ink-muted">
-                <span className="bg-[#B23BFF]/20 text-[#C060FF] px-2 py-0.5 rounded-md font-semibold text-xs tracking-wide">
-                  {user?.role === 'Team Leader' ? 'Leader' : user?.role}
-                </span>
-                <span>Thursday, 17 September • Week 38</span>
+            <div className="h-8 w-[1px] bg-theme-border hidden sm:block"></div>
+            
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex flex-col items-end">
+                <span className="text-sm font-semibold leading-none text-theme-primary">{user?.name}</span>
+                <span className="text-xs font-medium text-theme-text-secondary mt-1">{user?.role}</span>
               </div>
-              <h2 className="text-4xl font-display font-extrabold tracking-tight text-white">{title}</h2>
-            </div>
-
-            <div className="flex items-center gap-x-4">
-              <div className="flex flex-col items-end">
-                <span className="text-sm font-semibold leading-none text-white">{user?.name}</span>
-                <span className="text-xs font-medium text-theme-ink-muted mt-1">Signed in as {user?.role}</span>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-[#B23BFF] flex items-center justify-center font-bold text-white shadow-[0_0_15px_rgba(178,59,255,0.4)]">
+              <div className="w-9 h-9 rounded-full bg-theme-accent-light text-theme-accent flex items-center justify-center font-bold text-sm">
                 {user?.name?.charAt(0)?.toUpperCase()}
               </div>
             </div>
-          </header>
+          </div>
+        </header>
 
-          <main className="flex-1 overflow-y-auto px-6 sm:px-8 lg:px-12 pb-12 z-10">
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-y-auto px-6 lg:px-10 py-8 relative">
+          <div className="mx-auto max-w-7xl">
             {children}
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );

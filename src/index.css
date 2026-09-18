@@ -1,94 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  :root {
-    --bg: #FFFFFF;
-    --surface: #F5F6FA;
-    --surface-2: #EAEBF3;
-    --ink: #06070C;
-    --ink-muted: #5B5D6B;
-    --line: rgba(6, 7, 12, 0.10);
-    --accent-a: #3E63FF;
-    --accent-b: #B23BFF;
-    --accent-c: #00E0C0;
-    --glow: rgba(62, 99, 255, 0.25);
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #05060A;
-      --surface: #0D0F16;
-      --surface-2: #151824;
-      --ink: #F2F5FF;
-      --ink-muted: #8D90A6;
-      --line: rgba(242, 245, 255, 0.09);
-      --accent-a: #5C87FF;
-      --accent-b: #C060FF;
-      --accent-c: #17F0CB;
-      --glow: rgba(92, 135, 255, 0.35);
-    }
-  }
-
   body {
-    background-color: var(--bg);
-    color: var(--ink);
+    background-color: #F7F8FA;
+    color: #1F2937;
     font-family: 'Inter', sans-serif;
   }
+}
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Sora', sans-serif;
+@layer components {
+  /* Common UI Elements */
+  .btn-primary {
+    @apply bg-theme-primary text-white font-medium rounded-lg px-4 py-2 transition-colors hover:bg-theme-primary-hover shadow-soft;
   }
-}
+  
+  .btn-secondary {
+    @apply bg-white border border-theme-border text-theme-text font-medium rounded-lg px-4 py-2 transition-colors hover:bg-theme-bg shadow-sm;
+  }
 
-.mono-numbers {
-  font-family: 'IBM Plex Mono', monospace;
-}
+  .btn-danger {
+    @apply bg-white border border-theme-absent/30 text-theme-absent font-medium rounded-lg px-4 py-2 transition-colors hover:bg-theme-absent-bg;
+  }
 
-/* Plasma text gradient utility */
-.plasma-text {
-  background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
+  .card {
+    @apply bg-white border border-theme-border-subtle rounded-xl shadow-soft;
+  }
 
-.plasma-bg {
-  background: linear-gradient(135deg, var(--accent-a), var(--accent-b));
-}
-
-.glass-surface {
-  background: var(--surface);
-  backdrop-filter: blur(18px);
-  border: 1px solid var(--line);
-}
-
-.glass-panel {
-  background: rgba(13, 15, 22, 0.4);
-  backdrop-filter: blur(18px);
-  border: 1px solid var(--line);
-}
-
-@media (prefers-color-scheme: light) {
   .glass-panel {
-    background: rgba(245, 246, 250, 0.5);
+    @apply bg-white border border-theme-border rounded-xl shadow-soft;
   }
-}
 
-/* Basic 3D setup */
-.preserve-3d {
-  transform-style: preserve-3d;
-}
-.perspective-container {
-  perspective: 1000px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, ::before, ::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+  /* Table styling */
+  .premium-table {
+    @apply w-full text-left border-collapse;
+  }
+  .premium-table th {
+    @apply text-xs font-semibold text-theme-muted uppercase tracking-wider px-6 py-4 border-b border-theme-border-subtle bg-white sticky top-0 z-10;
+  }
+  .premium-table td {
+    @apply px-6 py-4 border-b border-theme-border-subtle text-sm transition-colors;
+  }
+  .premium-table tr:hover td {
+    @apply bg-theme-bg/50;
+  }
+  .premium-table tr:last-child td {
+    @apply border-b-0;
   }
 }

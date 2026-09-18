@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../../components/common/Layout';
-import { CheckSquare, Users, Settings, Database, ArrowRight, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Users, UsersRound, Calendar, CheckSquare, Settings, Database, ArrowRight, TrendingUp } from 'lucide-react';
 import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { collection, addDoc, setDoc, doc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
@@ -10,42 +10,28 @@ import { fetchMembers } from '../../services/memberService';
 import { fetchTeams } from '../../services/teamService';
 import { fetchAttendance } from '../../services/attendanceService';
 import { calculateAttendanceStats } from '../../utils/analyticsUtils';
-import { use3DTilt } from '../../hooks/use3DTilt';
 
-const TiltButton = ({ children, to, primary, onClick, disabled }) => {
-  const tiltRef = use3DTilt({ maxTilt: 15, scale: 1.05, zLift: 15 }); // Increased tilt max slightly for visibility
-  const className = `perspective-container flex items-center gap-2 px-6 py-3 rounded-[1.25rem] text-sm font-semibold transition-all preserve-3d ${
-    primary ? 'bg-gradient-to-r from-[#8B5CF6] to-[#C060FF] text-[#0D0F16] shadow-[0_0_20px_rgba(139,92,246,0.3)] hover:opacity-90' : 'bg-[#0D0F16] border border-white/5 text-white hover:bg-[#1A1D27]'
-  } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`;
-
-  if (to) {
-    return (
-      <Link to={to} className={className} ref={tiltRef}>
-        <div style={{ transform: 'translateZ(10px)' }} className="flex items-center gap-2">{children}</div>
-      </Link>
-    );
-  }
-
-  return (
-    <button onClick={onClick} disabled={disabled} className={className} ref={tiltRef}>
-      <div style={{ transform: 'translateZ(10px)' }} className="flex items-center gap-2">{children}</div>
-    </button>
-  );
-};
-
-const TiltRow = ({ children }) => {
-  const tiltRef = use3DTilt({ maxTilt: 5, scale: 1.02, zLift: 10 }); // Increased maxTilt slightly
-  return (
-    <div 
-      ref={tiltRef} 
-      className="group flex items-center justify-between py-4 px-2 border border-white/5 hover:border-white/10 transition-colors rounded-2xl preserve-3d bg-[#0D0F16]/80 backdrop-blur-md shadow-lg perspective-container"
-    >
-      <div style={{ transform: 'translateZ(15px)' }} className="w-full flex items-center justify-between preserve-3d">
-        {children}
+const StatCard = ({ title, value, subtitle, icon: Icon, trend }) => (
+  <div className="card p-6 flex flex-col gap-4">
+    <div className="flex items-center justify-between">
+      <span className="text-xs font-bold uppercase tracking-wider text-theme-muted">{title}</span>
+      <div className="p-2 bg-theme-bg rounded-lg text-theme-primary">
+        <Icon className="w-5 h-5" />
       </div>
     </div>
-  );
-};
+    <div className="flex flex-col gap-1">
+      <span className="text-3xl font-bold text-theme-primary">{value}</span>
+      <div className="flex items-center gap-2">
+        {trend && (
+          <span className="text-xs font-semibold text-theme-present bg-theme-present-bg px-2 py-0.5 rounded-md">
+            {trend}
+          </span>
+        )}
+        <span className="text-xs font-medium text-theme-text-secondary">{subtitle}</span>
+      </div>
+    </div>
+  </div>
+);
 
 const AdminDashboard = () => {
   const [seeding, setSeeding] = useState(false);
@@ -61,7 +47,7 @@ const AdminDashboard = () => {
       try {
         const members = await fetchMembers();
         const teams = await fetchTeams();
-        const records = await fetchAttendance(); // All time for now
+        const records = await fetchAttendance();
 
         const overallStats = calculateAttendanceStats(records, members);
         setClubStats({ ...overallStats, totalMembers: members.length });
@@ -73,8 +59,7 @@ const AdminDashboard = () => {
           return {
             id: t.id,
             name: t.name,
-            leaderCount: tMembers.filter(m => m.role === 'Team Leader').length,
-            memberCount: tMembers.filter(m => m.role === 'Member').length,
+            memberCount: tMembers.length,
             ...stats
           };
         });
@@ -131,168 +116,130 @@ const AdminDashboard = () => {
   };
 
   if (loading) {
-    return <Layout title="Dashboard"><div className="text-theme-ink-muted">Loading data...</div></Layout>;
+    return (
+      <Layout title="Dashboard" description="Monitor attendance and activity.">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[1,2,3,4].map(i => <div key={i} className="card h-32 animate-pulse bg-theme-bg/50"></div>)}
+        </div>
+      </Layout>
+    );
   }
 
-  // Calculate proportional widths for the stacked bar
-  const total = teamStatsList.reduce((acc, t) => acc + (t.present + t.late + t.absent), 0) || 1;
-  const colors = ['#8AA300', '#6C6E78', '#14151A', '#E2E2D9']; // Neutral + Accent palette for teams
-
   return (
-    <Layout title="Club overview">
+    <Layout title="Dashboard" description="Monitor attendance, teams, and member activity.">
       
-      {/* Quick Actions Row */}
-      <div className="flex flex-wrap gap-4 mb-8 hidden">
-        {/* Hiding the old quick actions to match the screenshot exactly, or we can keep them above the card */}
+      {/* Quick Actions */}
+      <div className="flex flex-wrap items-center gap-3 mb-8">
+        <Link to="/admin/mark-attendance" className="btn-primary flex items-center gap-2">
+          <CheckSquare className="w-4 h-4" /> Mark Attendance
+        </Link>
+        <Link to="/admin/members" className="btn-secondary flex items-center gap-2">
+          <Users className="w-4 h-4" /> Manage Members
+        </Link>
+        <Link to="/admin/teams" className="btn-secondary flex items-center gap-2">
+          <Settings className="w-4 h-4" /> Teams Setup
+        </Link>
       </div>
 
-      {/* Status Band Card */}
-      <div className="bg-[#12151f]/80 backdrop-blur-xl border border-white/5 rounded-[2rem] p-10 mb-10 shadow-2xl relative overflow-hidden">
-        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-24 relative z-10">
-          
-          <div className="flex flex-col items-center lg:items-start shrink-0">
-            <div className="text-[110px] font-display font-extrabold leading-[0.8] tracking-tighter mono-numbers text-transparent bg-clip-text bg-gradient-to-t from-[#B23BFF] to-[#3E63FF]">
-              {clubStats?.percentage || 0}<span className="text-6xl text-white ml-1">%</span>
-            </div>
-            <span className="text-theme-ink-muted text-sm mt-4 font-medium">club-wide attendance, this week</span>
-          </div>
-
-          <div className="flex-1 w-full flex flex-col justify-center">
-            {/* Stacked Bar */}
-            <div className="h-6 w-full flex rounded-full overflow-hidden mb-6 bg-[#1A1D27] shadow-inner">
-              {teamStatsList.map((t, i) => {
-                const tTotal = t.present + t.late + t.absent;
-                const width = total === 1 ? 0 : (tTotal / total) * 100;
-                let bgStyle = '';
-                if (i === 0) bgStyle = 'linear-gradient(90deg, #A855F7, #3B82F6)';
-                else if (i === 1) bgStyle = '#3B82F6';
-                else bgStyle = '#1E293B';
-
-                return width > 0 ? (
-                  <div key={t.id} style={{ width: `${width}%`, background: bgStyle }} className="h-full border-r border-[#12151f]/50 last:border-0" />
-                ) : null;
-              })}
-            </div>
-            
-            {/* Legend */}
-            <div className="flex items-center gap-6 mb-6">
-              {teamStatsList.map((t, i) => {
-                let color = '';
-                if (i === 0) color = '#A855F7';
-                else if (i === 1) color = '#3B82F6';
-                else color = '#64748B';
-                return (
-                  <div key={t.id} className="flex items-center gap-2 text-sm">
-                    <div className="w-2 h-2 rounded-sm" style={{ background: color }}></div>
-                    <span className="text-theme-ink-muted">{t.name} <span className="text-white ml-1">· {t.percentage}%</span></span>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Meta Stats Columns */}
-            <div className="flex gap-12 text-sm">
-              <div className="flex flex-col gap-1">
-                <span className="text-theme-ink-muted">Total members</span>
-                <span className="text-white font-bold text-xl mono-numbers">{clubStats?.totalMembers || 0}</span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-theme-ink-muted">Sessions logged</span>
-                <span className="text-white font-bold text-xl mono-numbers">{clubStats?.totalRecords || 0}</span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-theme-ink-muted">Vs. last week</span>
-                <span className="text-[#5C87FF] font-bold text-xl mono-numbers">+4 pts</span>
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <StatCard 
+          title="Total Members" 
+          value={clubStats?.totalMembers || 0} 
+          subtitle="Registered users" 
+          icon={UsersRound} 
+        />
+        <StatCard 
+          title="Active Teams" 
+          value={teamStatsList.length} 
+          subtitle="Managed groups" 
+          icon={Database} 
+        />
+        <StatCard 
+          title="Attendance Rate" 
+          value={`${clubStats?.percentage || 0}%`} 
+          subtitle="Overall average" 
+          icon={TrendingUp} 
+        />
+        <StatCard 
+          title="Sessions Logged" 
+          value={clubStats?.totalRecords || 0} 
+          subtitle="Total recorded" 
+          icon={Calendar} 
+        />
       </div>
 
-      {/* Team Ledger */}
-      <div className="mb-12">
-        <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-6">
-          <h3 className="text-sm font-bold uppercase tracking-widest text-theme-ink-muted">TEAMS</h3>
-          <Link to="/admin/analysis" className="text-sm font-semibold text-[#A855F7] hover:text-[#C060FF] transition-colors">
-            Open club analysis
+      {/* Team Performance Table */}
+      <div className="card overflow-hidden mb-12">
+        <div className="px-6 py-5 border-b border-theme-border-subtle flex items-center justify-between">
+          <h3 className="font-semibold text-theme-primary">Team Performance</h3>
+          <Link to="/admin/analysis" className="text-sm font-medium text-theme-accent hover:text-theme-primary-hover transition-colors">
+            View Analytics &rarr;
           </Link>
         </div>
         
-        <div className="flex flex-col gap-4 mb-10">
-          {teamStatsList.length === 0 ? (
-            <div className="py-8 text-center border border-theme-line glass-panel rounded-xl">
-              <p className="text-theme-ink-muted mb-4">No teams found in the database.</p>
-            </div>
-          ) : (
-            teamStatsList.map((t, i) => {
-              const isPositive = t.percentage >= 70;
-              const trendColor = isPositive ? '#A855F7' : '#EF4444';
-              const TrendIcon = isPositive ? ArrowUpRight : ArrowDownRight;
-              
-              return (
-                <TiltRow key={t.id}>
-                  <div className="flex items-center gap-4 w-1/3 pl-4">
-                    <div className="w-2.5 h-2.5 rounded-full shadow-[0_0_10px_rgba(168,85,247,0.8)]" style={{ background: '#A855F7' }}></div>
-                    <div className="flex flex-col gap-1">
-                      <h4 className="font-bold text-white text-base">{t.name}</h4>
-                      <p className="text-xs text-theme-ink-muted">Leader • {t.memberCount} members</p>
-                    </div>
-                  </div>
-
-                  {/* Vertical Bar Sparkline */}
-                  <div className="hidden md:flex flex-1 items-end gap-1.5 h-8 justify-center">
-                    {[...Array(6)].map((_, idx) => {
-                      const height = 30 + Math.random() * 70;
-                      const isRecent = idx > 3;
-                      return (
-                        <div 
-                          key={idx} 
-                          className="w-2 rounded-full transition-all" 
-                          style={{ 
-                            height: `${height}%`, 
-                            background: isRecent ? 'linear-gradient(to top, #3B82F6, #A855F7)' : '#1E293B',
-                            boxShadow: isRecent ? '0 0 8px rgba(168,85,247,0.4)' : 'none'
-                          }}
-                        ></div>
-                      )
-                    })}
-                  </div>
-
-                  <div className="flex items-center justify-end w-1/3 pr-6 gap-8">
-                    <span className="text-2xl font-bold mono-numbers text-white">{t.percentage}%</span>
-                    <div className="flex items-center gap-1 text-sm font-semibold" style={{ color: trendColor }}>
-                      <TrendIcon className="w-4 h-4" /> 
-                      <span>{Math.floor(Math.random() * 5) + 1} pts</span>
-                    </div>
-                  </div>
-                </TiltRow>
-              )
-            })
-          )}
-        </div>
-
-        {/* Action Buttons Row */}
-        <div className="flex flex-wrap items-center gap-4 mb-16">
-          <TiltButton to="/admin/mark-attendance" primary>
-            <CheckSquare className="w-4 h-4" strokeWidth={2.5} /> Mark today's attendance
-          </TiltButton>
-          <TiltButton to="/admin/members">
-            <Users className="w-4 h-4" strokeWidth={2.5} /> Add a member
-          </TiltButton>
-          <TiltButton to="/admin/teams">
-            <Settings className="w-4 h-4" strokeWidth={2.5} /> Manage teams
-          </TiltButton>
-        </div>
-
-        {/* Bottom Seed Section */}
-        <div className="flex items-center justify-between border-t border-white/5 pt-8">
-          <p className="text-xs text-theme-ink-muted">Empty club? Generate 3 teams with 1 leader and 3 members each to try the attendance flow.</p>
-          <TiltButton onClick={handleSeed} disabled={seeding}>
-            {seeding ? 'Seeding...' : 'Seed database'}
-          </TiltButton>
-        </div>
-        {seedMessage && <p className="mt-4 text-xs text-theme-accent-a text-right">{seedMessage}</p>}
+        {teamStatsList.length === 0 ? (
+          <div className="p-12 text-center flex flex-col items-center">
+            <Database className="w-10 h-10 text-theme-muted mb-4" />
+            <p className="text-theme-text font-medium mb-1">No teams found</p>
+            <p className="text-sm text-theme-text-secondary mb-6">Create teams to start tracking attendance.</p>
+            <button onClick={handleSeed} disabled={seeding} className="btn-secondary">
+              {seeding ? 'Seeding...' : 'Seed Database with Dummy Data'}
+            </button>
+            {seedMessage && <p className="mt-4 text-xs text-theme-accent">{seedMessage}</p>}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="premium-table">
+              <thead>
+                <tr>
+                  <th>Team</th>
+                  <th>Members</th>
+                  <th>Present</th>
+                  <th>Late</th>
+                  <th>Absent</th>
+                  <th>Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {teamStatsList.map((t) => (
+                  <tr key={t.id}>
+                    <td className="font-medium text-theme-primary">{t.name}</td>
+                    <td className="text-theme-text-secondary">{t.memberCount}</td>
+                    <td>
+                      <span className="bg-theme-present-bg text-theme-present px-2.5 py-1 rounded-md text-xs font-semibold">
+                        {t.present}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="bg-theme-late-bg text-theme-late px-2.5 py-1 rounded-md text-xs font-semibold">
+                        {t.late}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="bg-theme-absent-bg text-theme-absent px-2.5 py-1 rounded-md text-xs font-semibold">
+                        {t.absent}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="flex items-center gap-3">
+                        <span className="font-semibold">{t.percentage}%</span>
+                        <div className="w-24 h-1.5 bg-theme-border-subtle rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-theme-accent rounded-full" 
+                            style={{ width: `${t.percentage}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+
     </Layout>
   );
 };
