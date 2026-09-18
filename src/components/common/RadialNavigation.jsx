@@ -13,6 +13,7 @@ const RadialNavigation = () => {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const navRef = useRef(null);
+  const timeoutRef = useRef(null);
   
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -45,6 +46,21 @@ const RadialNavigation = () => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
+
+  const handleMouseEnter = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (!isMobile) {
+      setIsOpen(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (!isMobile) {
+      timeoutRef.current = setTimeout(() => {
+        setIsOpen(false);
+      }, 350);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -85,13 +101,13 @@ const RadialNavigation = () => {
   ];
   const totalItems = allItems.length;
 
-  const radius = isMobile ? 95 : 120; 
-  const arcRadius = radius - 18; 
+  const radius = isMobile ? 75 : 90; 
+  const arcRadius = radius - 15; 
 
   const getAngle = (index, total) => {
     if (total === 1) return 0;
-    const startAngle = -82; 
-    const endAngle = 82; 
+    const startAngle = -80; 
+    const endAngle = 80; 
     const spread = endAngle - startAngle;
     const step = spread / (total - 1);
     return (startAngle + index * step) * (Math.PI / 180);
@@ -105,12 +121,18 @@ const RadialNavigation = () => {
           isOpen ? "bg-slate-900/5 backdrop-blur-[1px] opacity-100 pointer-events-auto" : "opacity-0"
         )}
         onClick={() => setIsOpen(false)}
+        onMouseEnter={() => {
+          // If the mouse hits the backdrop and stops, it's not in the aside. 
+          // So it's safe to let the timeout run.
+        }}
       />
 
       <aside 
         ref={navRef}
         className="fixed top-1/2 left-6 sm:left-8 -translate-y-1/2 z-50 flex items-center justify-center pointer-events-none"
         style={{ width: '0px', height: '0px' }} 
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
         
         {/* Arc Line & Nodes */}
@@ -160,7 +182,7 @@ const RadialNavigation = () => {
             const angle = getAngle(index, totalItems);
             const x = radius * Math.cos(angle);
             const y = radius * Math.sin(angle);
-            const delay = index * 40; 
+            const delay = index * 50; 
 
             const isActive = location.pathname === item.to;
 
@@ -203,7 +225,7 @@ const RadialNavigation = () => {
               return (
                 <button 
                   key="logout" 
-                  onClick={(e) => { e.preventDefault(); item.action(); setIsOpen(false); }} 
+                  onClick={(e) => { e.preventDefault(); item.action(); }} 
                   style={style} 
                   className={clsx(
                     "absolute top-0 left-0 focus:outline-none transition-all duration-[300ms] ease-[cubic-bezier(0.2,0.8,0.2,1)]",
@@ -220,7 +242,6 @@ const RadialNavigation = () => {
               <NavLink 
                 key={item.to} 
                 to={item.to} 
-                onClick={() => setIsOpen(false)}
                 style={style} 
                 className={clsx(
                   "absolute top-0 left-0 focus:outline-none transition-all duration-[300ms] ease-[cubic-bezier(0.2,0.8,0.2,1)]",
