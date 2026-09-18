@@ -37,11 +37,11 @@ const Layout = ({ children, title, description }) => {
       
       <RadialNavigation />
       
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-[280px] z-10 relative">
+      {/* Main Content Area - Full Width */}
+      <div className="flex-1 flex flex-col min-w-0 z-10 relative">
         
         {/* Top Header */}
-        <header className="h-[88px] flex items-center justify-between px-6 lg:px-10 border-b border-theme-border-subtle bg-white/70 backdrop-blur-md sticky top-0 z-30">
+        <header className="h-[88px] flex items-center justify-between px-6 lg:px-10 pl-16 lg:pl-20 border-b border-theme-border-subtle bg-white/70 backdrop-blur-md sticky top-0 z-30">
           
           <div className="flex-1 min-w-0 pr-4">
             <h1 className="text-[22px] font-bold text-theme-primary truncate">
@@ -87,8 +87,8 @@ const Layout = ({ children, title, description }) => {
           </div>
         </header>
 
-        <main className="flex-1 p-6 lg:p-10 max-w-7xl">
-          {/* Mobile context (since header gets compressed) */}
+        <main className="flex-1 p-6 lg:p-10 pl-16 lg:pl-20 max-w-[1400px] mx-auto w-full">
+          {/* Mobile context */}
           <div className="sm:hidden mb-6">
             <h2 className="text-lg font-bold text-theme-primary">{title}</h2>
             <p className="text-xs text-theme-text-secondary mt-1">{description}</p>
