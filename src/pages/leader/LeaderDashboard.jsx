@@ -1,22 +1,23 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import Layout from '../../components/common/Layout';
+import FilterBar from '../../components/common/FilterBar';
+import { TeamAnalytics } from '../../components/analytics/TeamAnalytics';
 import { useAuth } from '../../context/AuthContext';
 import { fetchMembers, updateMember } from '../../services/memberService';
 import { fetchAttendance } from '../../services/attendanceService';
-import { calculateAttendanceStats } from '../../utils/analyticsUtils';
-import { Users, Calendar, CheckSquare, TrendingUp, UserMinus, Plus } from 'lucide-react';
+import { calculateAttendanceStats, applyFilters } from '../../utils/analyticsUtils';
+import { Users, Calendar, TrendingUp, UserMinus } from 'lucide-react';
 
 const StatCard = ({ title, value, subtitle, icon: Icon }) => (
-  <div className="card p-6 flex flex-col gap-4">
+  <div className="card p-5 flex flex-col gap-3 group">
     <div className="flex items-center justify-between">
-      <span className="text-xs font-bold uppercase tracking-wider text-theme-muted">{title}</span>
-      <div className="p-2 bg-theme-bg rounded-lg text-theme-primary">
-        <Icon className="w-5 h-5" />
+      <span className="text-[11px] font-bold uppercase tracking-wider text-theme-muted">{title}</span>
+      <div className="text-theme-muted group-hover:text-theme-accent transition-colors">
+        <Icon className="w-4 h-4" />
       </div>
     </div>
-    <div className="flex flex-col gap-1">
-      <span className="text-3xl font-bold text-theme-primary">{value}</span>
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[28px] leading-none font-bold text-theme-primary tracking-tight">{value}</span>
       <span className="text-xs font-medium text-theme-text-secondary">{subtitle}</span>
     </div>
   </div>
@@ -25,35 +26,35 @@ const StatCard = ({ title, value, subtitle, icon: Icon }) => (
 const LeaderDashboard = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState(null);
+  
   const [members, setTeamMembers] = useState([]);
+  const [records, setRecords] = useState([]);
+
+  // Filter state (Team is fixed for Leader)
+  const [filters, setFilters] = useState({ timePeriod: 'all', teamId: user?.teamId, status: 'all' });
 
   useEffect(() => {
+    const loadTeamData = async () => {
+      if (!user?.teamId) return;
+      setLoading(true);
+      try {
+        const m = await fetchMembers(user.teamId);
+        setTeamMembers(m);
+        const r = await fetchAttendance(user.teamId);
+        setRecords(r);
+      } catch (err) {
+        console.error(err);
+      }
+      setLoading(false);
+    };
     loadTeamData();
   }, [user]);
-
-  const loadTeamData = async () => {
-    if (!user?.teamId) return;
-    setLoading(true);
-    try {
-      const allMembers = await fetchMembers(user.teamId);
-      setTeamMembers(allMembers);
-
-      const allRecords = await fetchAttendance(user.teamId);
-      
-      const calculated = calculateAttendanceStats(allRecords, allMembers);
-      setStats({ ...calculated, totalMembers: allMembers.length });
-    } catch (err) {
-      console.error(err);
-    }
-    setLoading(false);
-  };
 
   const handleRemoveMember = async (memberId) => {
     if (!window.confirm("Remove this member from your team? They will become an External Member.")) return;
     try {
       await updateMember(memberId, { teamId: null });
-      loadTeamData(); // reload
+      setTeamMembers(prev => prev.filter(m => m.id !== memberId));
     } catch (err) {
       console.error(err);
       alert("Failed to remove member.");
@@ -62,57 +63,69 @@ const LeaderDashboard = () => {
 
   if (loading) {
     return (
-      <Layout title="My Team" description="Manage your team and view attendance.">
+      <Layout title="My Team" description="Manage your team and view attendance insights.">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {[1,2,3,4].map(i => <div key={i} className="card h-32 animate-pulse bg-theme-bg/50"></div>)}
+          {[1,2,3,4].map(i => <div key={i} className="card h-24 animate-pulse bg-theme-bg/50"></div>)}
         </div>
       </Layout>
     );
   }
 
+  // Force teamId to user's teamId in filters
+  const effectiveFilters = { ...filters, teamId: user.teamId };
+  const filteredRecords = applyFilters(records, effectiveFilters);
+  const stats = calculateAttendanceStats(filteredRecords, members);
+
   return (
     <Layout title="My Team" description="Manage your team and view attendance insights.">
       
-      {/* Quick Actions */}
-      <div className="flex flex-wrap items-center gap-3 mb-8">
-        <Link to="/leader/external-members" className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Add External Member
-        </Link>
-        <Link to="/leader/analysis" className="btn-secondary flex items-center gap-2">
-          <TrendingUp className="w-4 h-4" /> View Team Analytics
-        </Link>
-      </div>
+      {/* Hide the Team selector for Leaders in FilterBar, but we can just use the component as is 
+          Wait, FilterBar hides team selector if not Admin! So it works automatically. */}
+      <FilterBar filters={filters} setFilters={setFilters} />
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard 
           title="Team Members" 
-          value={stats?.totalMembers || 0} 
+          value={members.length} 
           subtitle="Users in your team" 
           icon={Users} 
         />
         <StatCard 
           title="Attendance Rate" 
-          value={`${stats?.percentage || 0}%`} 
-          subtitle="Overall average" 
+          value={`${stats.percentage}%`} 
+          subtitle="Filtered average" 
           icon={TrendingUp} 
         />
         <StatCard 
-          title="Present (All Time)" 
-          value={stats?.present || 0} 
-          subtitle="Total instances" 
-          icon={CheckSquare} 
+          title="Present Sessions" 
+          value={stats.present} 
+          subtitle="Filtered total" 
+          icon={Calendar} 
         />
         <StatCard 
-          title="Sessions Logged" 
-          value={stats?.totalRecords || 0} 
-          subtitle="Total recorded" 
+          title="Total Logged" 
+          value={stats.totalRecords} 
+          subtitle="Filtered total" 
           icon={Calendar} 
         />
       </div>
 
+      {filteredRecords.length > 0 ? (
+        <div className="mb-12">
+          <TeamAnalytics records={filteredRecords} members={members} />
+        </div>
+      ) : (
+        <div className="card p-12 text-center flex flex-col items-center mb-12">
+          <Calendar className="w-10 h-10 text-theme-muted mb-3" />
+          <p className="text-theme-text font-medium mb-1">No attendance data found</p>
+          <p className="text-sm text-theme-text-secondary">Try adjusting your filters.</p>
+        </div>
+      )}
+
+      {/* Roster */}
       <div className="card overflow-hidden">
-        <div className="px-6 py-5 border-b border-theme-border-subtle flex justify-between items-center">
+        <div className="px-6 py-5 border-b border-theme-border-subtle">
           <h3 className="font-semibold text-theme-primary">Team Roster</h3>
         </div>
         <div className="overflow-x-auto">

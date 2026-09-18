@@ -2,16 +2,22 @@
 import Layout from '../../components/common/Layout';
 import { fetchMembers, createMember, deleteMember } from '../../services/memberService';
 import { fetchTeams } from '../../services/teamService';
-import { Plus, Users, Search, Trash2 } from 'lucide-react';
+import { fetchAttendance } from '../../services/attendanceService';
+import { IndividualAnalytics } from '../../components/analytics/IndividualAnalytics';
+import { calculateAttendanceStats } from '../../utils/analyticsUtils';
+import { Plus, Users, Search, Trash2, X } from 'lucide-react';
 
 const ManageMembers = () => {
   const [members, setMembers] = useState([]);
   const [teams, setTeams] = useState([]);
+  const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   
   const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'Member' });
   const [isAdding, setIsAdding] = useState(false);
+  
+  const [selectedMember, setSelectedMember] = useState(null);
 
   useEffect(() => {
     loadData();
@@ -22,8 +28,10 @@ const ManageMembers = () => {
     try {
       const mData = await fetchMembers();
       const tData = await fetchTeams();
+      const rData = await fetchAttendance();
       setMembers(mData);
       setTeams(tData);
+      setRecords(rData);
     } catch (err) {
       console.error(err);
     }
@@ -33,7 +41,6 @@ const ManageMembers = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      // Admins just create members. By default they get teamId = null (handled in service)
       await createMember(formData);
       setFormData({ name: '', email: '', password: '', role: 'Member' });
       setIsAdding(false);
@@ -44,7 +51,8 @@ const ManageMembers = () => {
     }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id, e) => {
+    e.stopPropagation();
     if (!window.confirm("Are you sure you want to remove this member?")) return;
     try {
       await deleteMember(id);
@@ -77,7 +85,7 @@ const ManageMembers = () => {
         </div>
         <button 
           onClick={() => setIsAdding(!isAdding)}
-          className="btn-primary flex items-center gap-2"
+          className="btn-primary"
         >
           <Plus className="w-4 h-4" /> {isAdding ? 'Cancel' : 'Add Member'}
         </button>
@@ -130,7 +138,6 @@ const ManageMembers = () => {
           <div className="p-12 text-center flex flex-col items-center">
             <Users className="w-10 h-10 text-theme-muted mb-4" />
             <p className="text-theme-text font-medium">No members found</p>
-            <p className="text-sm text-theme-text-secondary">Try adjusting your search criteria or add a new member.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -148,7 +155,11 @@ const ManageMembers = () => {
                 {filteredMembers.map(member => {
                   const teamName = teams.find(t => t.id === member.teamId)?.name;
                   return (
-                    <tr key={member.id}>
+                    <tr 
+                      key={member.id} 
+                      onClick={() => setSelectedMember(member)}
+                      className="cursor-pointer hover:bg-theme-accent/5 transition-colors"
+                    >
                       <td>
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-theme-bg flex items-center justify-center text-theme-primary font-bold text-sm border border-theme-border-subtle">
@@ -163,7 +174,7 @@ const ManageMembers = () => {
                       <td>
                         <span className={`text-xs font-semibold px-2.5 py-1 rounded-md ${
                           member.role === 'Admin' ? 'bg-theme-accent/10 text-theme-accent' : 
-                          member.role === 'Team Leader' ? 'bg-theme-secondary-accent/10 text-theme-secondary-accent' : 
+                          member.role === 'Team Leader' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' : 
                           'bg-theme-bg text-theme-text-secondary'
                         }`}>
                           {member.role}
@@ -177,7 +188,7 @@ const ManageMembers = () => {
                       </td>
                       <td className="text-right">
                         <button 
-                          onClick={() => handleDelete(member.id)} 
+                          onClick={(e) => handleDelete(member.id, e)} 
                           className="text-theme-muted hover:text-theme-absent transition-colors p-2 rounded-lg hover:bg-theme-absent-bg"
                           title="Remove member"
                         >
@@ -192,6 +203,65 @@ const ManageMembers = () => {
           </div>
         )}
       </div>
+
+      {/* Member Analytics Modal */}
+      {selectedMember && (
+        <div className="fixed inset-0 bg-theme-primary/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-theme-bg w-full max-w-4xl rounded-2xl shadow-float overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-theme-border-subtle bg-white flex justify-between items-start shrink-0">
+              <div>
+                <h2 className="text-xl font-bold text-theme-primary">{selectedMember.name}</h2>
+                <p className="text-sm text-theme-text-secondary">
+                  {selectedMember.role} &bull; {teams.find(t => t.id === selectedMember.teamId)?.name || 'External Member'}
+                </p>
+              </div>
+              <button 
+                onClick={() => setSelectedMember(null)}
+                className="p-2 bg-theme-bg rounded-full text-theme-text-secondary hover:text-theme-primary hover:bg-theme-border-subtle transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              {(() => {
+                const memberRecords = records.filter(r => r.userId === selectedMember.id);
+                const stats = calculateAttendanceStats(memberRecords, [selectedMember]);
+                return (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
+                      <div className="card p-4 text-center">
+                        <div className="text-[10px] font-bold text-theme-muted uppercase mb-1">Attendance</div>
+                        <div className="text-2xl font-bold text-theme-accent">{stats.percentage}%</div>
+                      </div>
+                      <div className="card p-4 text-center">
+                        <div className="text-[10px] font-bold text-theme-muted uppercase mb-1">Present</div>
+                        <div className="text-2xl font-bold text-theme-present">{stats.present}</div>
+                      </div>
+                      <div className="card p-4 text-center">
+                        <div className="text-[10px] font-bold text-theme-muted uppercase mb-1">Late</div>
+                        <div className="text-2xl font-bold text-theme-late">{stats.late}</div>
+                      </div>
+                      <div className="card p-4 text-center">
+                        <div className="text-[10px] font-bold text-theme-muted uppercase mb-1">Absent</div>
+                        <div className="text-2xl font-bold text-theme-absent">{stats.absent}</div>
+                      </div>
+                    </div>
+                    
+                    {memberRecords.length > 0 ? (
+                      <IndividualAnalytics records={memberRecords} />
+                    ) : (
+                      <div className="text-center py-12 text-theme-text-secondary">
+                        No attendance history for this member.
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

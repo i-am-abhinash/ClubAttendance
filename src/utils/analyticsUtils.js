@@ -1,3 +1,5 @@
+﻿import { isSameDay, isSameWeek, isSameMonth, parseISO } from 'date-fns';
+
 export const calculateAttendanceStats = (records, members = []) => {
   const total = records.length;
   const present = records.filter(r => r.status === 'Present').length;
@@ -6,45 +8,30 @@ export const calculateAttendanceStats = (records, members = []) => {
   
   const percentage = total === 0 ? 0 : Math.round(((present + (late * 0.5)) / total) * 100);
 
-  // Group by member
-  const memberStats = {};
-  if (members.length > 0) {
-    members.forEach(m => {
-      memberStats[m.id] = { name: m.name, total: 0, present: 0, absent: 0, late: 0 };
+  return { total, present, absent, late, percentage, totalRecords: total };
+};
+
+export const applyFilters = (records, filters) => {
+  let filtered = [...records];
+  const now = new Date();
+
+  if (filters.teamId && filters.teamId !== 'all') {
+    filtered = filtered.filter(r => r.teamId === filters.teamId);
+  }
+
+  if (filters.status && filters.status !== 'all') {
+    filtered = filtered.filter(r => r.status === filters.status);
+  }
+
+  if (filters.timePeriod && filters.timePeriod !== 'all') {
+    filtered = filtered.filter(r => {
+      const recordDate = parseISO(r.date);
+      if (filters.timePeriod === 'today') return isSameDay(recordDate, now);
+      if (filters.timePeriod === 'week') return isSameWeek(recordDate, now, { weekStartsOn: 1 });
+      if (filters.timePeriod === 'month') return isSameMonth(recordDate, now);
+      return true;
     });
   }
 
-  records.forEach(r => {
-    if (!memberStats[r.userId]) {
-      memberStats[r.userId] = { name: 'Unknown', total: 0, present: 0, absent: 0, late: 0 };
-    }
-    memberStats[r.userId].total += 1;
-    if (r.status === 'Present') memberStats[r.userId].present += 1;
-    if (r.status === 'Absent') memberStats[r.userId].absent += 1;
-    if (r.status === 'Late') memberStats[r.userId].late += 1;
-  });
-
-  const memberChartData = Object.values(memberStats).map(stat => ({
-    name: stat.name,
-    Present: stat.present,
-    Absent: stat.absent,
-    Late: stat.late,
-    AttendanceRate: stat.total === 0 ? 0 : Math.round(((stat.present + (stat.late * 0.5)) / stat.total) * 100)
-  }));
-
-  // Group by Date for trend
-  const dateMap = {};
-  records.forEach(r => {
-    if (!dateMap[r.date]) {
-      dateMap[r.date] = { date: r.date, present: 0, absent: 0, late: 0, total: 0 };
-    }
-    dateMap[r.date].total += 1;
-    if (r.status === 'Present') dateMap[r.date].present += 1;
-    if (r.status === 'Absent') dateMap[r.date].absent += 1;
-    if (r.status === 'Late') dateMap[r.date].late += 1;
-  });
-  
-  const trendData = Object.values(dateMap).sort((a, b) => new Date(a.date) - new Date(b.date));
-
-  return { total, present, absent, late, percentage, memberChartData, trendData };
+  return filtered;
 };

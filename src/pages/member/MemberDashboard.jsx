@@ -4,18 +4,19 @@ import Layout from '../../components/common/Layout';
 import { useAuth } from '../../context/AuthContext';
 import { fetchAttendance } from '../../services/attendanceService';
 import { fetchTeams } from '../../services/teamService';
+import { IndividualAnalytics } from '../../components/analytics/IndividualAnalytics';
 import { Calendar, CheckSquare, Clock, XCircle, TrendingUp, ShieldAlert, ShieldCheck } from 'lucide-react';
 
 const StatCard = ({ title, value, subtitle, icon: Icon, colorClass }) => (
-  <div className="card p-6 flex flex-col gap-4">
+  <div className="card p-5 flex flex-col gap-3 group">
     <div className="flex items-center justify-between">
-      <span className="text-xs font-bold uppercase tracking-wider text-theme-muted">{title}</span>
-      <div className={`p-2 rounded-lg ${colorClass}`}>
-        <Icon className="w-5 h-5" />
+      <span className="text-[11px] font-bold uppercase tracking-wider text-theme-muted">{title}</span>
+      <div className={`p-1.5 rounded-lg ${colorClass} opacity-80 group-hover:opacity-100 transition-opacity`}>
+        <Icon className="w-4 h-4" />
       </div>
     </div>
-    <div className="flex flex-col gap-1">
-      <span className="text-3xl font-bold text-theme-primary">{value}</span>
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[28px] leading-none font-bold text-theme-primary tracking-tight">{value}</span>
       <span className="text-xs font-medium text-theme-text-secondary">{subtitle}</span>
     </div>
   </div>
@@ -25,7 +26,7 @@ const MemberDashboard = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ present: 0, late: 0, absent: 0, total: 0, rate: 0 });
-  const [recentRecords, setRecentRecords] = useState([]);
+  const [records, setRecords] = useState([]);
   const [teamName, setTeamName] = useState('');
 
   useEffect(() => {
@@ -39,11 +40,11 @@ const MemberDashboard = () => {
           if (t) setTeamName(t.name);
         }
 
-        const records = await fetchAttendance(null, user.uid);
-        const myRecords = records.sort((a, b) => b.date.localeCompare(a.date));
+        const rawRecords = await fetchAttendance(null, user.uid);
+        const sortedRecords = rawRecords.sort((a, b) => b.date.localeCompare(a.date));
         
         let present = 0, late = 0, absent = 0;
-        myRecords.forEach(r => {
+        sortedRecords.forEach(r => {
           if (r.status === 'Present') present++;
           else if (r.status === 'Late') late++;
           else if (r.status === 'Absent') absent++;
@@ -53,7 +54,7 @@ const MemberDashboard = () => {
         const rate = total === 0 ? 0 : Math.round(((present + (late * 0.5)) / total) * 100);
 
         setStats({ present, late, absent, total, rate });
-        setRecentRecords(myRecords.slice(0, 5));
+        setRecords(sortedRecords);
       } catch (err) {
         console.error(err);
       }
@@ -64,39 +65,33 @@ const MemberDashboard = () => {
 
   if (loading) {
     return (
-      <Layout title={`Welcome back, ${user?.name || ''}`} description="Here's how your club participation is going.">
+      <Layout title="Dashboard" description="Here's how your club participation is going.">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {[1,2,3,4].map(i => <div key={i} className="card h-32 animate-pulse bg-theme-bg/50"></div>)}
+          {[1,2,3,4].map(i => <div key={i} className="card h-24 animate-pulse bg-theme-bg/50"></div>)}
         </div>
       </Layout>
     );
   }
 
   return (
-    <Layout title={`Welcome back, ${user?.name || ''}`} description="Here's how your club participation is going.">
+    <Layout title="Dashboard" description="Here's how your club participation is going.">
       
       {/* Team Status Alert */}
-      <div className={`card p-4 mb-8 flex items-center gap-4 ${user?.teamId ? 'border-theme-present border-l-4' : 'border-theme-late border-l-4'}`}>
+      <div className={`card p-4 mb-6 flex items-center gap-4 border-l-4 ${user?.teamId ? 'border-theme-present' : 'border-theme-late'}`}>
         <div className={`p-2 rounded-full ${user?.teamId ? 'bg-theme-present-bg text-theme-present' : 'bg-theme-late-bg text-theme-late'}`}>
           {user?.teamId ? <ShieldCheck className="w-6 h-6" /> : <ShieldAlert className="w-6 h-6" />}
         </div>
         <div>
-          <h4 className="font-semibold text-theme-primary">
+          <h4 className="font-semibold text-theme-primary text-sm">
             {user?.teamId ? 'Team Member' : 'External Member'}
           </h4>
-          <p className="text-sm text-theme-text-secondary">
+          <p className="text-xs text-theme-text-secondary mt-0.5">
             {user?.teamId ? `You are currently assigned to ${teamName || 'a team'}.` : 'You have not been assigned to a team yet. A team leader will recruit you soon.'}
           </p>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 mb-8">
-        <Link to="/member/attendance" className="btn-secondary flex items-center gap-2">
-          <Calendar className="w-4 h-4" /> View Full History
-        </Link>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard 
           title="Attendance Rate" 
           value={`${stats.rate}%`} 
@@ -127,9 +122,24 @@ const MemberDashboard = () => {
         />
       </div>
 
+      {records.length > 0 ? (
+        <div className="mb-12">
+          <IndividualAnalytics records={records} />
+        </div>
+      ) : (
+        <div className="card p-12 text-center flex flex-col items-center mb-8">
+          <Calendar className="w-10 h-10 text-theme-muted mb-3" />
+          <p className="text-theme-text font-medium mb-1">No attendance data yet</p>
+          <p className="text-sm text-theme-text-secondary">Your attendance will appear here once recorded.</p>
+        </div>
+      )}
+
       <div className="card overflow-hidden">
         <div className="px-6 py-5 border-b border-theme-border-subtle flex items-center justify-between">
-          <h3 className="font-semibold text-theme-primary">Recent Attendance</h3>
+          <h3 className="font-semibold text-theme-primary">Recent History</h3>
+          <Link to="/member/attendance" className="text-xs font-semibold text-theme-accent hover:text-theme-primary transition-colors">
+            View All &rarr;
+          </Link>
         </div>
         <div className="overflow-x-auto">
           <table className="premium-table">
@@ -140,7 +150,7 @@ const MemberDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {recentRecords.map(r => {
+              {records.slice(0, 5).map(r => {
                 let badgeClass = '';
                 if (r.status === 'Present') badgeClass = 'bg-theme-present-bg text-theme-present';
                 else if (r.status === 'Late') badgeClass = 'bg-theme-late-bg text-theme-late';
@@ -157,14 +167,6 @@ const MemberDashboard = () => {
                   </tr>
                 );
               })}
-              {recentRecords.length === 0 && (
-                <tr>
-                  <td colSpan="2" className="text-center py-12 text-theme-text-secondary">
-                    <Calendar className="w-10 h-10 text-theme-muted mx-auto mb-4" />
-                    <p>There isn't any attendance data for you yet.</p>
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>

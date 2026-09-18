@@ -1,62 +1,97 @@
-﻿import React, { useState } from 'react';
-import Sidebar from './Sidebar';
-import { Menu, Calendar as CalendarIcon, Bell } from 'lucide-react';
+﻿import React from 'react';
+import RadialNavigation from './RadialNavigation';
+import { Search, Bell, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const Layout = ({ children, title, description }) => {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   
   const today = new Date().toLocaleDateString('en-US', { 
     weekday: 'long', 
-    month: 'long', 
+    month: 'short', 
     day: 'numeric' 
   });
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 18) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
   return (
-    <div className="flex h-screen bg-theme-bg text-theme-text font-sans overflow-hidden">
+    <div className="flex min-h-screen bg-theme-bg text-theme-text font-sans relative">
       
-      <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+      {/* Background Watermark */}
+      <div 
+        className="fixed inset-0 pointer-events-none z-0" 
+        style={{
+          backgroundImage: "url('/mitra-logo.jpg')",
+          backgroundPosition: "center right",
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "800px",
+          opacity: 0.03,
+          mixBlendMode: "multiply"
+        }}
+      />
+      
+      <RadialNavigation />
       
       {/* Main Content Area */}
-      {/* Added dynamic margin-left for desktop based on Sidebar width. It's normally 240px, or 72px when collapsed, but Sidebar uses CSS classes. 
-          To keep it simple without complex state passing, we just add padding that accommodates the expanded sidebar. */}
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-[240px] h-screen overflow-y-auto">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-[280px] z-10 relative">
         
-        {/* Mobile Header */}
-        <header className="lg:hidden h-16 bg-white border-b border-theme-border-subtle flex items-center px-4 shrink-0">
-          <button 
-            onClick={() => setMobileOpen(true)}
-            className="p-2 -ml-2 text-theme-text-secondary hover:text-theme-primary hover:bg-theme-bg rounded-lg"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <span className="ml-3 font-semibold text-theme-primary">ClubAttendance</span>
-        </header>
-
-        {/* Desktop Header */}
-        <header className="hidden lg:flex h-20 items-center justify-between px-8 border-b border-theme-border-subtle bg-white/50 backdrop-blur-sm shrink-0 sticky top-0 z-10">
-          <div>
-            <h1 className="text-xl font-bold text-theme-primary">{title}</h1>
-            {description && <p className="text-sm text-theme-text-secondary mt-0.5">{description}</p>}
+        {/* Top Header */}
+        <header className="h-[88px] flex items-center justify-between px-6 lg:px-10 border-b border-theme-border-subtle bg-white/70 backdrop-blur-md sticky top-0 z-30">
+          
+          <div className="flex-1 min-w-0 pr-4">
+            <h1 className="text-[22px] font-bold text-theme-primary truncate">
+              {getGreeting()}, {user?.name?.split(' ')[0]} 👋
+            </h1>
+            <p className="text-[13px] text-theme-text-secondary mt-0.5 truncate hidden sm:block">
+              {title} - {description}
+            </p>
           </div>
-          <div className="flex items-center gap-6">
-            <div className="hidden md:flex items-center gap-2 text-sm text-theme-text-secondary">
-              <CalendarIcon className="w-4 h-4 text-theme-muted" />
-              <span className="font-medium">{today}</span>
+          
+          <div className="flex items-center gap-5 shrink-0">
+            {/* Search */}
+            <div className="hidden md:flex items-center relative w-64">
+              <Search className="w-4 h-4 text-theme-muted absolute left-3 top-1/2 -translate-y-1/2" />
+              <input 
+                type="text" 
+                placeholder="Search..." 
+                className="w-full bg-theme-bg/80 border border-theme-border rounded-full py-2 pl-9 pr-4 text-[13px] focus:outline-none focus:bg-white focus:border-theme-accent focus:ring-1 focus:ring-theme-accent transition-all"
+              />
             </div>
+            
+            <div className="hidden sm:block text-[13px] font-medium text-theme-text-secondary">
+              {today}
+            </div>
+            
             <button className="text-theme-muted hover:text-theme-primary transition-colors relative">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-0 right-0 w-2 h-2 bg-theme-accent rounded-full border-2 border-white"></span>
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-theme-accent rounded-full border-2 border-white"></span>
             </button>
+            
+            <div className="h-8 w-px bg-theme-border hidden sm:block"></div>
+            
+            <div className="flex items-center gap-3 cursor-pointer group">
+              <div className="text-right hidden sm:block">
+                <div className="text-[13px] font-semibold text-theme-primary">{user?.name}</div>
+                <div className="text-[11px] text-theme-text-secondary">{user?.role}</div>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-theme-accent-light text-theme-accent flex items-center justify-center font-bold text-sm border border-theme-accent/20 group-hover:shadow-md transition-shadow">
+                {user?.name?.charAt(0).toUpperCase()}
+              </div>
+              <ChevronDown className="w-4 h-4 text-theme-muted hidden sm:block" />
+            </div>
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-8">
-          {/* Mobile Title (hidden on desktop) */}
-          <div className="lg:hidden mb-6 mt-2">
-            <h1 className="text-xl font-bold text-theme-primary">{title}</h1>
-            {description && <p className="text-sm text-theme-text-secondary mt-1">{description}</p>}
+        <main className="flex-1 p-6 lg:p-10 max-w-7xl">
+          {/* Mobile context (since header gets compressed) */}
+          <div className="sm:hidden mb-6">
+            <h2 className="text-lg font-bold text-theme-primary">{title}</h2>
+            <p className="text-xs text-theme-text-secondary mt-1">{description}</p>
           </div>
           
           {children}
