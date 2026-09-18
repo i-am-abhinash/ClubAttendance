@@ -1,15 +1,14 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/common/Layout';
-import FilterBar from '../../components/common/FilterBar';
-import { TeamAnalytics } from '../../components/analytics/TeamAnalytics';
 import { useAuth } from '../../context/AuthContext';
-import { fetchMembers, updateMember } from '../../services/memberService';
+import { fetchMembers } from '../../services/memberService';
 import { fetchAttendance } from '../../services/attendanceService';
-import { calculateAttendanceStats, applyFilters } from '../../utils/analyticsUtils';
-import { Users, Calendar, TrendingUp, UserMinus } from 'lucide-react';
+import { calculateAttendanceStats } from '../../utils/analyticsUtils';
+import { Users, Calendar, TrendingUp, ArrowRight } from 'lucide-react';
 
 const StatCard = ({ title, value, subtitle, icon: Icon }) => (
-  <div className="card p-5 flex flex-col gap-3 group">
+  <div className="card p-5 flex flex-col gap-3 group hover:border-theme-accent transition-colors">
     <div className="flex items-center justify-between">
       <span className="text-[11px] font-bold uppercase tracking-wider text-theme-muted">{title}</span>
       <div className="text-theme-muted group-hover:text-theme-accent transition-colors">
@@ -25,13 +24,11 @@ const StatCard = ({ title, value, subtitle, icon: Icon }) => (
 
 const LeaderDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   
   const [members, setTeamMembers] = useState([]);
   const [records, setRecords] = useState([]);
-
-  // Filter state (Team is fixed for Leader)
-  const [filters, setFilters] = useState({ timePeriod: 'all', teamId: user?.teamId, status: 'all' });
 
   useEffect(() => {
     const loadTeamData = async () => {
@@ -50,20 +47,9 @@ const LeaderDashboard = () => {
     loadTeamData();
   }, [user]);
 
-  const handleRemoveMember = async (memberId) => {
-    if (!window.confirm("Remove this member from your team? They will become an External Member.")) return;
-    try {
-      await updateMember(memberId, { teamId: null });
-      setTeamMembers(prev => prev.filter(m => m.id !== memberId));
-    } catch (err) {
-      console.error(err);
-      alert("Failed to remove member.");
-    }
-  };
-
   if (loading) {
     return (
-      <Layout title="My Team" description="Manage your team and view attendance insights.">
+      <Layout title="Dashboard" description="Overview of your team's performance.">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {[1,2,3,4].map(i => <div key={i} className="card h-24 animate-pulse bg-theme-bg/50"></div>)}
         </div>
@@ -71,112 +57,53 @@ const LeaderDashboard = () => {
     );
   }
 
-  // Force teamId to user's teamId in filters
-  const effectiveFilters = { ...filters, teamId: user.teamId };
-  const filteredRecords = applyFilters(records, effectiveFilters);
-  const stats = calculateAttendanceStats(filteredRecords, members);
+  const stats = calculateAttendanceStats(records, members);
 
   return (
-    <Layout title="My Team" description="Manage your team and view attendance insights.">
+    <Layout title="Dashboard" description="Overview of your team's performance.">
       
-      {/* Hide the Team selector for Leaders in FilterBar, but we can just use the component as is 
-          Wait, FilterBar hides team selector if not Admin! So it works automatically. */}
-      <FilterBar filters={filters} setFilters={setFilters} />
-
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard 
           title="Team Members" 
           value={members.length} 
-          subtitle="Users in your team" 
+          subtitle="Total users assigned to you" 
           icon={Users} 
         />
         <StatCard 
           title="Attendance Rate" 
           value={`${stats.percentage}%`} 
-          subtitle="Filtered average" 
+          subtitle="All-time average" 
           icon={TrendingUp} 
         />
         <StatCard 
           title="Present Sessions" 
           value={stats.present} 
-          subtitle="Filtered total" 
+          subtitle="All-time total" 
           icon={Calendar} 
         />
         <StatCard 
           title="Total Logged" 
           value={stats.totalRecords} 
-          subtitle="Filtered total" 
+          subtitle="All-time total records" 
           icon={Calendar} 
         />
       </div>
 
-      {filteredRecords.length > 0 ? (
-        <div className="mb-12">
-          <TeamAnalytics records={filteredRecords} members={members} />
-        </div>
-      ) : (
-        <div className="card p-12 text-center flex flex-col items-center mb-12">
-          <Calendar className="w-10 h-10 text-theme-muted mb-3" />
-          <p className="text-theme-text font-medium mb-1">No attendance data found</p>
-          <p className="text-sm text-theme-text-secondary">Try adjusting your filters.</p>
-        </div>
-      )}
-
-      {/* Roster */}
-      <div className="card overflow-hidden">
-        <div className="px-6 py-5 border-b border-theme-border-subtle">
-          <h3 className="font-semibold text-theme-primary">Team Roster</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="premium-table">
-            <thead>
-              <tr>
-                <th>Member</th>
-                <th>Role</th>
-                <th>Email</th>
-                <th className="text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {members.map(m => (
-                <tr key={m.id}>
-                  <td>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-theme-accent-light text-theme-accent flex items-center justify-center font-bold text-xs">
-                        {m.name.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="font-medium text-theme-primary">{m.name}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`text-xs font-semibold px-2 py-1 rounded-md ${m.role === 'Team Leader' ? 'bg-theme-accent-light text-theme-accent' : 'bg-theme-bg text-theme-text-secondary'}`}>
-                      {m.role}
-                    </span>
-                  </td>
-                  <td className="text-theme-text-secondary">{m.email}</td>
-                  <td className="text-right">
-                    {m.role !== 'Team Leader' && (
-                      <button 
-                        onClick={() => handleRemoveMember(m.id)}
-                        className="text-theme-muted hover:text-theme-absent transition-colors p-2 rounded-lg hover:bg-theme-absent-bg"
-                        title="Remove from team"
-                      >
-                        <UserMinus className="w-4 h-4" />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {members.length === 0 && (
-                <tr>
-                  <td colSpan="4" className="text-center py-8 text-theme-text-secondary">No members found in your team.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+      <div className="card p-8 flex flex-col items-center justify-center text-center max-w-2xl mx-auto border-theme-accent/20 bg-theme-accent/5">
+        <Users className="w-12 h-12 text-theme-accent mb-4" />
+        <h2 className="text-xl font-bold text-theme-primary mb-2">Manage Your Team</h2>
+        <p className="text-sm text-theme-text-secondary mb-6 max-w-md mx-auto">
+          View your complete team roster, monitor daily attendance records, and review detailed performance analytics in the Team Details workspace.
+        </p>
+        <button 
+          onClick={() => navigate('/leader/team')}
+          className="btn-primary flex items-center gap-2"
+        >
+          Open Team Workspace <ArrowRight className="w-4 h-4" />
+        </button>
       </div>
+
     </Layout>
   );
 };
