@@ -34,21 +34,33 @@ const Layout = ({ children, title, description }) => {
           mixBlendMode: "multiply"
         }}
       />
-      
+
+      {/* Independent Radial Navigation (Fixed on Left Edge) */}
       <RadialNavigation />
       
-      {/* Main Content Area - Absolutely Full Width */}
-      <div className="flex-1 flex flex-col min-w-0 z-10 relative w-full">
+      {/* Main Content Area - Left Gutter added to prevent overlapping the fixed radial button */}
+      <div className="flex-1 flex flex-col min-w-0 z-10 relative w-full pl-[80px] sm:pl-[100px] lg:pl-[120px]">
         
         {/* Top Header */}
-        <header className="h-[88px] flex items-center justify-between px-6 lg:px-10 border-b border-theme-border-subtle bg-white/70 backdrop-blur-md sticky top-0 z-30">
-          <div className="flex-1 min-w-0 pr-4 pl-14 lg:pl-16">
-            <h1 className="text-[22px] font-bold text-theme-primary truncate">
-              {getGreeting()}, {user?.name?.split(' ')[0]} 👋
-            </h1>
-            <p className="text-[13px] text-theme-text-secondary mt-0.5 truncate hidden sm:block">
-              {title} - {description}
-            </p>
+        <header className="h-[88px] flex items-center justify-between pr-6 lg:pr-10 border-b border-theme-border-subtle bg-white/70 backdrop-blur-md sticky top-0 z-30">
+          
+          <div className="flex-1 min-w-0 pr-4 flex items-center gap-4">
+            
+            {/* The Actual MITRA Logo placed before the greeting */}
+            <img 
+              src="/mitra-logo.jpg" 
+              alt="MITRA Logo" 
+              className="h-10 sm:h-12 w-auto object-contain mix-blend-multiply"
+            />
+            
+            <div className="flex flex-col justify-center border-l border-theme-border-subtle pl-4 ml-2">
+              <h1 className="text-[20px] sm:text-[22px] font-bold text-theme-primary truncate">
+                {getGreeting()}, {user?.name?.split(' ')[0]} 👋
+              </h1>
+              <p className="text-[12px] sm:text-[13px] text-theme-text-secondary mt-0.5 truncate hidden sm:block">
+                {title} - {description}
+              </p>
+            </div>
           </div>
           
           <div className="flex items-center gap-5 shrink-0">
@@ -87,7 +99,7 @@ const Layout = ({ children, title, description }) => {
         </header>
 
         {/* Dashboard Content */}
-        <main className="flex-1 p-6 lg:p-10 pl-20 lg:pl-24 max-w-full mx-auto w-full">
+        <main className="flex-1 py-6 pr-6 lg:py-10 lg:pr-10 max-w-[1600px] w-full">
           {/* Mobile context */}
           <div className="sm:hidden mb-6">
             <h2 className="text-lg font-bold text-theme-primary">{title}</h2>
