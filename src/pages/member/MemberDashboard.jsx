@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../../components/common/Layout';
 import { useAuth } from '../../context/AuthContext';
 import { fetchAttendance } from '../../services/attendanceService';
-import { Calendar, CheckSquare, Clock, XCircle, TrendingUp } from 'lucide-react';
+import { fetchTeams } from '../../services/teamService';
+import { Calendar, CheckSquare, Clock, XCircle, TrendingUp, ShieldAlert, ShieldCheck } from 'lucide-react';
 
 const StatCard = ({ title, value, subtitle, icon: Icon, colorClass }) => (
   <div className="card p-6 flex flex-col gap-4">
@@ -25,14 +26,21 @@ const MemberDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ present: 0, late: 0, absent: 0, total: 0, rate: 0 });
   const [recentRecords, setRecentRecords] = useState([]);
+  const [teamName, setTeamName] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
       if (!user?.uid) return;
       setLoading(true);
       try {
-        const records = await fetchAttendance();
-        const myRecords = records.filter(r => r.userId === user.uid).sort((a, b) => b.date.localeCompare(a.date));
+        if (user.teamId) {
+          const teams = await fetchTeams();
+          const t = teams.find(t => t.id === user.teamId);
+          if (t) setTeamName(t.name);
+        }
+
+        const records = await fetchAttendance(null, user.uid);
+        const myRecords = records.sort((a, b) => b.date.localeCompare(a.date));
         
         let present = 0, late = 0, absent = 0;
         myRecords.forEach(r => {
@@ -42,7 +50,7 @@ const MemberDashboard = () => {
         });
 
         const total = present + late + absent;
-        const rate = total === 0 ? 0 : Math.round((present + late) / total * 100);
+        const rate = total === 0 ? 0 : Math.round(((present + (late * 0.5)) / total) * 100);
 
         setStats({ present, late, absent, total, rate });
         setRecentRecords(myRecords.slice(0, 5));
@@ -67,6 +75,21 @@ const MemberDashboard = () => {
   return (
     <Layout title={`Welcome back, ${user?.name || ''}`} description="Here's how your club participation is going.">
       
+      {/* Team Status Alert */}
+      <div className={`card p-4 mb-8 flex items-center gap-4 ${user?.teamId ? 'border-theme-present border-l-4' : 'border-theme-late border-l-4'}`}>
+        <div className={`p-2 rounded-full ${user?.teamId ? 'bg-theme-present-bg text-theme-present' : 'bg-theme-late-bg text-theme-late'}`}>
+          {user?.teamId ? <ShieldCheck className="w-6 h-6" /> : <ShieldAlert className="w-6 h-6" />}
+        </div>
+        <div>
+          <h4 className="font-semibold text-theme-primary">
+            {user?.teamId ? 'Team Member' : 'External Member'}
+          </h4>
+          <p className="text-sm text-theme-text-secondary">
+            {user?.teamId ? `You are currently assigned to ${teamName || 'a team'}.` : 'You have not been assigned to a team yet. A team leader will recruit you soon.'}
+          </p>
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-center gap-3 mb-8">
         <Link to="/member/attendance" className="btn-secondary flex items-center gap-2">
           <Calendar className="w-4 h-4" /> View Full History

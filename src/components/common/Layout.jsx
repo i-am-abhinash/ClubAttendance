@@ -1,70 +1,65 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import Sidebar from './Sidebar';
+import { Menu, Calendar as CalendarIcon, Bell } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { Menu, Bell } from 'lucide-react';
 
 const Layout = ({ children, title, description }) => {
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  const today = new Date().toLocaleDateString('en-US', { 
+    weekday: 'long', 
+    month: 'long', 
+    day: 'numeric' 
+  });
 
   return (
-    <div className="flex h-screen bg-theme-bg overflow-hidden text-theme-text font-sans">
-      <Sidebar />
+    <div className="flex h-screen bg-theme-bg text-theme-text font-sans overflow-hidden">
       
-      {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 flex md:hidden">
-          <div className="fixed inset-0 bg-theme-primary/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)}></div>
-          <div className="relative bg-white w-[260px] h-full shadow-2xl">
-            <Sidebar />
-          </div>
-        </div>
-      )}
+      <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+      
+      {/* Main Content Area */}
+      {/* Added dynamic margin-left for desktop based on Sidebar width. It's normally 240px, or 72px when collapsed, but Sidebar uses CSS classes. 
+          To keep it simple without complex state passing, we just add padding that accommodates the expanded sidebar. */}
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-[240px] h-screen overflow-y-auto">
+        
+        {/* Mobile Header */}
+        <header className="lg:hidden h-16 bg-white border-b border-theme-border-subtle flex items-center px-4 shrink-0">
+          <button 
+            onClick={() => setMobileOpen(true)}
+            className="p-2 -ml-2 text-theme-text-secondary hover:text-theme-primary hover:bg-theme-bg rounded-lg"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <span className="ml-3 font-semibold text-theme-primary">ClubAttendance</span>
+        </header>
 
-      <div className="flex flex-col flex-1 w-0 overflow-hidden">
-        {/* Top Header */}
-        <header className="h-20 shrink-0 bg-white border-b border-theme-border flex items-center justify-between px-6 lg:px-10 z-10">
-          <div className="flex items-center gap-4">
-            <button 
-              type="button" 
-              className="p-2 -ml-2 text-theme-muted hover:text-theme-text md:hidden rounded-lg hover:bg-theme-bg" 
-              onClick={() => setMobileMenuOpen(true)}
-            >
-              <Menu className="h-6 w-6" />
-            </button>
-            <div className="flex flex-col">
-              <h1 className="text-xl font-bold tracking-tight text-theme-primary">{title}</h1>
-              {description && (
-                <p className="text-sm font-medium text-theme-text-secondary">{description}</p>
-              )}
-            </div>
+        {/* Desktop Header */}
+        <header className="hidden lg:flex h-20 items-center justify-between px-8 border-b border-theme-border-subtle bg-white/50 backdrop-blur-sm shrink-0 sticky top-0 z-10">
+          <div>
+            <h1 className="text-xl font-bold text-theme-primary">{title}</h1>
+            {description && <p className="text-sm text-theme-text-secondary mt-0.5">{description}</p>}
           </div>
-
           <div className="flex items-center gap-6">
+            <div className="hidden md:flex items-center gap-2 text-sm text-theme-text-secondary">
+              <CalendarIcon className="w-4 h-4 text-theme-muted" />
+              <span className="font-medium">{today}</span>
+            </div>
             <button className="text-theme-muted hover:text-theme-primary transition-colors relative">
               <Bell className="w-5 h-5" />
               <span className="absolute top-0 right-0 w-2 h-2 bg-theme-accent rounded-full border-2 border-white"></span>
             </button>
-            
-            <div className="h-8 w-[1px] bg-theme-border hidden sm:block"></div>
-            
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex flex-col items-end">
-                <span className="text-sm font-semibold leading-none text-theme-primary">{user?.name}</span>
-                <span className="text-xs font-medium text-theme-text-secondary mt-1">{user?.role}</span>
-              </div>
-              <div className="w-9 h-9 rounded-full bg-theme-accent-light text-theme-accent flex items-center justify-center font-bold text-sm">
-                {user?.name?.charAt(0)?.toUpperCase()}
-              </div>
-            </div>
           </div>
         </header>
 
-        {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto px-6 lg:px-10 py-8 relative">
-          <div className="mx-auto max-w-7xl">
-            {children}
+        <main className="flex-1 p-4 lg:p-8">
+          {/* Mobile Title (hidden on desktop) */}
+          <div className="lg:hidden mb-6 mt-2">
+            <h1 className="text-xl font-bold text-theme-primary">{title}</h1>
+            {description && <p className="text-sm text-theme-text-secondary mt-1">{description}</p>}
           </div>
+          
+          {children}
         </main>
       </div>
     </div>

@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../../components/common/Layout';
 import { useAuth } from '../../context/AuthContext';
-import { fetchMembers } from '../../services/memberService';
+import { fetchMembers, updateMember } from '../../services/memberService';
 import { fetchAttendance } from '../../services/attendanceService';
 import { calculateAttendanceStats } from '../../utils/analyticsUtils';
-import { Users, Calendar, CheckSquare, TrendingUp } from 'lucide-react';
+import { Users, Calendar, CheckSquare, TrendingUp, UserMinus, Plus } from 'lucide-react';
 
 const StatCard = ({ title, value, subtitle, icon: Icon }) => (
   <div className="card p-6 flex flex-col gap-4">
@@ -29,30 +29,40 @@ const LeaderDashboard = () => {
   const [members, setTeamMembers] = useState([]);
 
   useEffect(() => {
-    const loadTeamData = async () => {
-      if (!user?.teamId) return;
-      setLoading(true);
-      try {
-        const allMembers = await fetchMembers();
-        const teamMembers = allMembers.filter(m => m.teamId === user.teamId);
-        setTeamMembers(teamMembers);
-
-        const allRecords = await fetchAttendance();
-        const teamRecords = allRecords.filter(r => r.teamId === user.teamId);
-        
-        const calculated = calculateAttendanceStats(teamRecords, teamMembers);
-        setStats({ ...calculated, totalMembers: teamMembers.length });
-      } catch (err) {
-        console.error(err);
-      }
-      setLoading(false);
-    };
     loadTeamData();
   }, [user]);
 
+  const loadTeamData = async () => {
+    if (!user?.teamId) return;
+    setLoading(true);
+    try {
+      const allMembers = await fetchMembers(user.teamId);
+      setTeamMembers(allMembers);
+
+      const allRecords = await fetchAttendance(user.teamId);
+      
+      const calculated = calculateAttendanceStats(allRecords, allMembers);
+      setStats({ ...calculated, totalMembers: allMembers.length });
+    } catch (err) {
+      console.error(err);
+    }
+    setLoading(false);
+  };
+
+  const handleRemoveMember = async (memberId) => {
+    if (!window.confirm("Remove this member from your team? They will become an External Member.")) return;
+    try {
+      await updateMember(memberId, { teamId: null });
+      loadTeamData(); // reload
+    } catch (err) {
+      console.error(err);
+      alert("Failed to remove member.");
+    }
+  };
+
   if (loading) {
     return (
-      <Layout title="My Team" description="Monitor your team's attendance.">
+      <Layout title="My Team" description="Manage your team and view attendance.">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {[1,2,3,4].map(i => <div key={i} className="card h-32 animate-pulse bg-theme-bg/50"></div>)}
         </div>
@@ -61,15 +71,15 @@ const LeaderDashboard = () => {
   }
 
   return (
-    <Layout title="My Team" description="Monitor your team's attendance and participation.">
+    <Layout title="My Team" description="Manage your team and view attendance insights.">
       
       {/* Quick Actions */}
       <div className="flex flex-wrap items-center gap-3 mb-8">
-        <Link to="/leader/mark-attendance" className="btn-primary flex items-center gap-2">
-          <CheckSquare className="w-4 h-4" /> Mark Today's Attendance
+        <Link to="/leader/external-members" className="btn-primary flex items-center gap-2">
+          <Plus className="w-4 h-4" /> Add External Member
         </Link>
         <Link to="/leader/analysis" className="btn-secondary flex items-center gap-2">
-          <TrendingUp className="w-4 h-4" /> View Analytics
+          <TrendingUp className="w-4 h-4" /> View Team Analytics
         </Link>
       </div>
 
@@ -102,7 +112,7 @@ const LeaderDashboard = () => {
       </div>
 
       <div className="card overflow-hidden">
-        <div className="px-6 py-5 border-b border-theme-border-subtle">
+        <div className="px-6 py-5 border-b border-theme-border-subtle flex justify-between items-center">
           <h3 className="font-semibold text-theme-primary">Team Roster</h3>
         </div>
         <div className="overflow-x-auto">
@@ -112,6 +122,7 @@ const LeaderDashboard = () => {
                 <th>Member</th>
                 <th>Role</th>
                 <th>Email</th>
+                <th className="text-right">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -131,11 +142,22 @@ const LeaderDashboard = () => {
                     </span>
                   </td>
                   <td className="text-theme-text-secondary">{m.email}</td>
+                  <td className="text-right">
+                    {m.role !== 'Team Leader' && (
+                      <button 
+                        onClick={() => handleRemoveMember(m.id)}
+                        className="text-theme-muted hover:text-theme-absent transition-colors p-2 rounded-lg hover:bg-theme-absent-bg"
+                        title="Remove from team"
+                      >
+                        <UserMinus className="w-4 h-4" />
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
               {members.length === 0 && (
                 <tr>
-                  <td colSpan="3" className="text-center py-8 text-theme-text-secondary">No members found in your team.</td>
+                  <td colSpan="4" className="text-center py-8 text-theme-text-secondary">No members found in your team.</td>
                 </tr>
               )}
             </tbody>

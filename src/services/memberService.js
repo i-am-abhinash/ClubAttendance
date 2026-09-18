@@ -1,9 +1,8 @@
-import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
+﻿import { collection, getDocs, doc, setDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { initializeApp } from 'firebase/app';
 import { db } from './firebase';
 
-// Create a secondary app instance to handle user creation without logging out the admin
 const secondaryApp = initializeApp({
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -15,30 +14,37 @@ const secondaryApp = initializeApp({
 
 const secondaryAuth = getAuth(secondaryApp);
 
-export const fetchMembers = async (teamId = null) => {
+export const fetchMembers = async (teamId = undefined) => {
   let q = collection(db, 'users');
-  if (teamId) {
+  if (teamId !== undefined) {
     q = query(q, where("teamId", "==", teamId));
   }
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
+export const fetchExternalMembers = async () => {
+  const q = query(collection(db, 'users'), where("teamId", "==", null));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(u => u.role === 'Member');
+};
+
 export const createMember = async (memberData) => {
-  // memberData needs email, password, name, role, teamId
-  const { email, password, ...rest } = memberData;
+  const { email, password, name, role } = memberData;
   const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
   const uid = userCredential.user.uid;
   
-  await setDoc(doc(db, 'users', uid), {
+  const userData = {
     email,
-    ...rest
-  });
-  
-  // secondaryAuth will sign in the new user on the secondary instance.
+    name,
+    role: role || 'Member',
+    teamId: null // Explicitly null
+  };
+
+  await setDoc(doc(db, 'users', uid), userData);
   await secondaryAuth.signOut();
   
-  return { id: uid, email, ...rest };
+  return { id: uid, ...userData };
 };
 
 export const updateMember = async (userId, memberData) => {
@@ -48,6 +54,4 @@ export const updateMember = async (userId, memberData) => {
 
 export const deleteMember = async (userId) => {
   await deleteDoc(doc(db, 'users', userId));
-  // Note: this only deletes the firestore doc, not the Auth user. 
-  // Deleting Auth users from client requires them to be signed in or requires Cloud Functions.
 };

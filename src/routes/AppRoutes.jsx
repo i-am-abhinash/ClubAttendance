@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import { useAuth } from '../context/AuthContext';
@@ -6,13 +6,18 @@ import { useAuth } from '../context/AuthContext';
 // Pages
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
+
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import ManageTeams from '../pages/admin/ManageTeams';
 import ManageMembers from '../pages/admin/ManageMembers';
 import ClubAnalysis from '../pages/admin/ClubAnalysis';
+import MarkAttendance from '../pages/admin/MarkAttendance';
+import ExternalMembersAdmin from '../pages/admin/ExternalMembers';
+
 import LeaderDashboard from '../pages/leader/LeaderDashboard';
-import MarkAttendance from '../pages/leader/MarkAttendance';
 import TeamAnalysis from '../pages/leader/TeamAnalysis';
+import ExternalMembersLeader from '../pages/leader/ExternalMembers';
+
 import MemberDashboard from '../pages/member/MemberDashboard';
 import MyAttendance from '../pages/member/MyAttendance';
 
@@ -36,12 +41,13 @@ const AppRoutes = () => {
       <Route path="/admin" element={<ProtectedRoute allowedRoles={['Admin']}><AdminDashboard /></ProtectedRoute>} />
       <Route path="/admin/teams" element={<ProtectedRoute allowedRoles={['Admin']}><ManageTeams /></ProtectedRoute>} />
       <Route path="/admin/members" element={<ProtectedRoute allowedRoles={['Admin']}><ManageMembers /></ProtectedRoute>} />
+      <Route path="/admin/external-members" element={<ProtectedRoute allowedRoles={['Admin']}><ExternalMembersAdmin /></ProtectedRoute>} />
       <Route path="/admin/analysis" element={<ProtectedRoute allowedRoles={['Admin']}><ClubAnalysis /></ProtectedRoute>} />
-      <Route path="/admin/mark-attendance" element={<ProtectedRoute allowedRoles={['Admin']}><MarkAttendance /></ProtectedRoute>} />
+      <Route path="/admin/attendance" element={<ProtectedRoute allowedRoles={['Admin']}><MarkAttendance /></ProtectedRoute>} />
 
       {/* Leader Routes */}
       <Route path="/leader" element={<ProtectedRoute allowedRoles={['Team Leader']}><LeaderDashboard /></ProtectedRoute>} />
-      <Route path="/leader/mark-attendance" element={<ProtectedRoute allowedRoles={['Team Leader']}><MarkAttendance /></ProtectedRoute>} />
+      <Route path="/leader/external-members" element={<ProtectedRoute allowedRoles={['Team Leader']}><ExternalMembersLeader /></ProtectedRoute>} />
       <Route path="/leader/analysis" element={<ProtectedRoute allowedRoles={['Team Leader']}><TeamAnalysis /></ProtectedRoute>} />
 
       {/* Member Routes */}

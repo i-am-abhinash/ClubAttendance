@@ -1,18 +1,17 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import Layout from '../../components/common/Layout';
 import { useAuth } from '../../context/AuthContext';
 import { fetchTeams } from '../../services/teamService';
 import { fetchMembers } from '../../services/memberService';
-import { markAttendance, editAttendance, fetchDailyAttendance } from '../../services/attendanceService';
-import { isSameDay } from 'date-fns';
-import { Search, Filter, Calendar, Users } from 'lucide-react';
+import { markAttendance, fetchDailyAttendance } from '../../services/attendanceService';
+import { Search, Filter, Users } from 'lucide-react';
 import clsx from 'clsx';
 
 const MarkAttendance = () => {
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   
   const [teams, setTeams] = useState([]);
-  const [selectedTeam, setSelectedTeam] = useState(isAdmin ? '' : user?.teamId || '');
+  const [selectedTeam, setSelectedTeam] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   
   const [members, setMembers] = useState([]);
@@ -22,10 +21,8 @@ const MarkAttendance = () => {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchTeams().then(setTeams);
-    }
-  }, [isAdmin]);
+    fetchTeams().then(setTeams);
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -61,32 +58,20 @@ const MarkAttendance = () => {
     }));
 
     try {
-      if (existingRecord && !existingRecord._optimistic) {
-        if (!isAdmin) {
-          setMessage('Error: Only Admins can edit attendance.');
-          // Revert on error
-          setAttendanceRecords(prev => ({ ...prev, [memberId]: existingRecord }));
-          return;
-        }
-        await editAttendance(existingRecord.id, status, existingRecord.date);
-        setAttendanceRecords(prev => ({
-          ...prev,
-          [memberId]: { ...existingRecord, status }
-        }));
-      } else {
-        const newRecordData = {
-          userId: memberId,
-          teamId: selectedTeam,
-          date: date,
-          status,
-          markedBy: user.uid
-        };
-        const newRecord = await markAttendance(newRecordData);
-        setAttendanceRecords(prev => ({
-          ...prev,
-          [memberId]: newRecord
-        }));
-      }
+      const newRecordData = {
+        userId: memberId,
+        teamId: selectedTeam,
+        date: date,
+        status,
+        markedBy: user.uid
+      };
+      // markAttendance handles both create and deterministic update using setDoc
+      const newRecord = await markAttendance(newRecordData);
+      
+      setAttendanceRecords(prev => ({
+        ...prev,
+        [memberId]: newRecord
+      }));
     } catch (err) {
       setMessage(err.message || 'Error saving attendance');
       // Revert on error
@@ -102,41 +87,32 @@ const MarkAttendance = () => {
     }
   };
 
-  const isEditingAllowed = () => {
-    if (!isAdmin) return false;
-    const [year, month, day] = date.split('-').map(Number);
-    const selectedDateObj = new Date(year, month - 1, day);
-    return isSameDay(new Date(), selectedDateObj);
-  };
-
   const filteredMembers = members.filter(m => m.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <Layout title="Mark Attendance" description="Record today's attendance for your team.">
+    <Layout title="Mark Attendance" description="Record attendance for any team (Admin Only).">
       <div className="card overflow-hidden">
         
         {/* Top Controls */}
         <div className="p-6 border-b border-theme-border-subtle bg-theme-bg/30">
           <div className="flex flex-col md:flex-row gap-4 justify-between">
             <div className="flex flex-col md:flex-row gap-4 flex-1">
-              {isAdmin && (
-                <div className="flex-1 max-w-xs">
-                  <label className="block text-xs font-semibold text-theme-text-secondary uppercase tracking-wider mb-2">Team</label>
-                  <div className="relative">
-                    <select 
-                      className="w-full appearance-none bg-white border border-theme-border rounded-lg py-2.5 pl-4 pr-10 text-sm focus:outline-none focus:border-theme-accent focus:ring-1 focus:ring-theme-accent shadow-sm"
-                      value={selectedTeam}
-                      onChange={e => setSelectedTeam(e.target.value)}
-                    >
-                      <option value="">Select team...</option>
-                      {teams?.map(t => (
-                        <option key={t.id} value={t.id}>{t.name}</option>
-                      ))}
-                    </select>
-                    <Filter className="w-4 h-4 text-theme-muted absolute right-3 top-3 pointer-events-none" />
-                  </div>
+              <div className="flex-1 max-w-xs">
+                <label className="block text-xs font-semibold text-theme-text-secondary uppercase tracking-wider mb-2">Team</label>
+                <div className="relative">
+                  <select 
+                    className="w-full appearance-none bg-white border border-theme-border rounded-lg py-2.5 pl-4 pr-10 text-sm focus:outline-none focus:border-theme-accent focus:ring-1 focus:ring-theme-accent shadow-sm"
+                    value={selectedTeam}
+                    onChange={e => setSelectedTeam(e.target.value)}
+                  >
+                    <option value="">Select team...</option>
+                    {teams?.map(t => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                  <Filter className="w-4 h-4 text-theme-muted absolute right-3 top-3 pointer-events-none" />
                 </div>
-              )}
+              </div>
               
               <div className="flex-1 max-w-xs">
                 <label className="block text-xs font-semibold text-theme-text-secondary uppercase tracking-wider mb-2">Date</label>
@@ -207,8 +183,6 @@ const MarkAttendance = () => {
                 <tbody>
                   {filteredMembers.map(member => {
                     const record = attendanceRecords[member.id];
-                    const hasRecord = !!record && !record._optimistic;
-                    const canEdit = !hasRecord || (hasRecord && isEditingAllowed());
                     const currentStatus = record?.status;
                     
                     return (
@@ -229,11 +203,9 @@ const MarkAttendance = () => {
                         <td className="w-[300px]">
                           <div className="flex p-1 bg-theme-bg rounded-lg border border-theme-border-subtle overflow-hidden">
                             <button
-                              disabled={!canEdit}
                               onClick={() => handleStatusChange(member.id, 'Present')}
                               className={clsx(
                                 "flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors",
-                                !canEdit && currentStatus !== 'Present' ? "opacity-40 cursor-not-allowed" : "",
                                 currentStatus === 'Present' 
                                   ? "bg-theme-present-bg text-theme-present shadow-sm border border-theme-present/20" 
                                   : "text-theme-muted hover:text-theme-text"
@@ -242,11 +214,9 @@ const MarkAttendance = () => {
                               Present
                             </button>
                             <button
-                              disabled={!canEdit}
                               onClick={() => handleStatusChange(member.id, 'Late')}
                               className={clsx(
                                 "flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors",
-                                !canEdit && currentStatus !== 'Late' ? "opacity-40 cursor-not-allowed" : "",
                                 currentStatus === 'Late' 
                                   ? "bg-theme-late-bg text-theme-late shadow-sm border border-theme-late/20" 
                                   : "text-theme-muted hover:text-theme-text"
@@ -255,11 +225,9 @@ const MarkAttendance = () => {
                               Late
                             </button>
                             <button
-                              disabled={!canEdit}
                               onClick={() => handleStatusChange(member.id, 'Absent')}
                               className={clsx(
                                 "flex-1 py-1.5 text-xs font-semibold rounded-md transition-colors",
-                                !canEdit && currentStatus !== 'Absent' ? "opacity-40 cursor-not-allowed" : "",
                                 currentStatus === 'Absent' 
                                   ? "bg-theme-absent-bg text-theme-absent shadow-sm border border-theme-absent/20" 
                                   : "text-theme-muted hover:text-theme-text"

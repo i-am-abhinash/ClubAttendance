@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import Layout from '../../components/common/Layout';
 import { fetchMembers, createMember, deleteMember } from '../../services/memberService';
 import { fetchTeams } from '../../services/teamService';
@@ -10,7 +10,7 @@ const ManageMembers = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'Member', teamId: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'Member' });
   const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => {
@@ -33,8 +33,9 @@ const ManageMembers = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
+      // Admins just create members. By default they get teamId = null (handled in service)
       await createMember(formData);
-      setFormData({ name: '', email: '', password: '', role: 'Member', teamId: '' });
+      setFormData({ name: '', email: '', password: '', role: 'Member' });
       setIsAdding(false);
       loadData();
     } catch (err) {
@@ -60,7 +61,7 @@ const ManageMembers = () => {
   );
 
   return (
-    <Layout title="Members" description="Manage club members and team assignments.">
+    <Layout title="Members" description="Manage all club members globally.">
       
       {/* Top Controls */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -106,15 +107,7 @@ const ManageMembers = () => {
                 <option value="Admin">Admin</option>
               </select>
             </div>
-            {formData.role !== 'Admin' && (
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-theme-text mb-1">Assign to Team</label>
-                <select required className="w-full border border-theme-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-theme-accent" value={formData.teamId} onChange={e => setFormData({...formData, teamId: e.target.value})}>
-                  <option value="">Select Team</option>
-                  {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                </select>
-              </div>
-            )}
+            
             <div className="md:col-span-2 mt-4 flex gap-3">
               <button type="submit" className="btn-primary">
                 Create Account
@@ -146,6 +139,7 @@ const ManageMembers = () => {
                 <tr>
                   <th>Member</th>
                   <th>Role</th>
+                  <th>Status</th>
                   <th>Team</th>
                   <th className="text-right">Actions</th>
                 </tr>
@@ -176,7 +170,10 @@ const ManageMembers = () => {
                         </span>
                       </td>
                       <td>
-                        <span className="text-sm text-theme-text">{teamName || '-'}</span>
+                        <span className="text-sm text-theme-text">{!member.teamId && member.role === 'Member' ? 'External Member' : 'Team Member'}</span>
+                      </td>
+                      <td>
+                        <span className="text-sm text-theme-text-secondary">{teamName || 'Not Assigned'}</span>
                       </td>
                       <td className="text-right">
                         <button 

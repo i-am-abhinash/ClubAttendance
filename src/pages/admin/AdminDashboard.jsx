@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../../components/common/Layout';
-import { Users, UsersRound, Calendar, CheckSquare, Settings, Database, ArrowRight, TrendingUp } from 'lucide-react';
-import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { collection, addDoc, setDoc, doc } from 'firebase/firestore';
-import { db } from '../../services/firebase';
-import { initializeApp } from 'firebase/app';
 import { fetchMembers } from '../../services/memberService';
 import { fetchTeams } from '../../services/teamService';
 import { fetchAttendance } from '../../services/attendanceService';
 import { calculateAttendanceStats } from '../../utils/analyticsUtils';
+import { Users, Calendar, CheckSquare, Settings, TrendingUp, UsersRound, Database, UserMinus } from 'lucide-react';
+import { addDoc, collection, setDoc, doc } from 'firebase/firestore';
+import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { initializeApp } from 'firebase/app';
+import { db } from '../../services/firebase';
 
-const StatCard = ({ title, value, subtitle, icon: Icon, trend }) => (
+const StatCard = ({ title, value, subtitle, icon: Icon }) => (
   <div className="card p-6 flex flex-col gap-4">
     <div className="flex items-center justify-between">
       <span className="text-xs font-bold uppercase tracking-wider text-theme-muted">{title}</span>
@@ -21,25 +21,19 @@ const StatCard = ({ title, value, subtitle, icon: Icon, trend }) => (
     </div>
     <div className="flex flex-col gap-1">
       <span className="text-3xl font-bold text-theme-primary">{value}</span>
-      <div className="flex items-center gap-2">
-        {trend && (
-          <span className="text-xs font-semibold text-theme-present bg-theme-present-bg px-2 py-0.5 rounded-md">
-            {trend}
-          </span>
-        )}
-        <span className="text-xs font-medium text-theme-text-secondary">{subtitle}</span>
-      </div>
+      <span className="text-xs font-medium text-theme-text-secondary">{subtitle}</span>
     </div>
   </div>
 );
 
 const AdminDashboard = () => {
+  const [loading, setLoading] = useState(true);
   const [seeding, setSeeding] = useState(false);
   const [seedMessage, setSeedMessage] = useState('');
   
-  const [loading, setLoading] = useState(true);
   const [clubStats, setClubStats] = useState(null);
   const [teamStatsList, setTeamStatsList] = useState([]);
+  const [externalCount, setExternalCount] = useState(0);
 
   useEffect(() => {
     const loadData = async () => {
@@ -50,7 +44,17 @@ const AdminDashboard = () => {
         const records = await fetchAttendance();
 
         const overallStats = calculateAttendanceStats(records, members);
-        setClubStats({ ...overallStats, totalMembers: members.length });
+        
+        const extCount = members.filter(m => !m.teamId && m.role === 'Member').length;
+        const teamMemberCount = members.filter(m => m.teamId).length;
+
+        setClubStats({ 
+          ...overallStats, 
+          totalMembers: members.length,
+          externalCount: extCount,
+          teamMemberCount: teamMemberCount,
+          totalTeams: teams.length
+        });
 
         const tStats = teams.map(t => {
           const tMembers = members.filter(m => m.teamId === t.id);
@@ -118,47 +122,59 @@ const AdminDashboard = () => {
   if (loading) {
     return (
       <Layout title="Dashboard" description="Monitor attendance and activity.">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {[1,2,3,4].map(i => <div key={i} className="card h-32 animate-pulse bg-theme-bg/50"></div>)}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {[1,2,3,4,5,6].map(i => <div key={i} className="card h-32 animate-pulse bg-theme-bg/50"></div>)}
         </div>
       </Layout>
     );
   }
 
   return (
-    <Layout title="Dashboard" description="Monitor attendance, teams, and member activity.">
+    <Layout title="Dashboard" description="Club-wide overview of attendance and member activity.">
       
       {/* Quick Actions */}
       <div className="flex flex-wrap items-center gap-3 mb-8">
-        <Link to="/admin/mark-attendance" className="btn-primary flex items-center gap-2">
+        <Link to="/admin/attendance" className="btn-primary flex items-center gap-2">
           <CheckSquare className="w-4 h-4" /> Mark Attendance
         </Link>
         <Link to="/admin/members" className="btn-secondary flex items-center gap-2">
           <Users className="w-4 h-4" /> Manage Members
         </Link>
-        <Link to="/admin/teams" className="btn-secondary flex items-center gap-2">
-          <Settings className="w-4 h-4" /> Teams Setup
+        <Link to="/admin/external-members" className="btn-secondary flex items-center gap-2">
+          <UserMinus className="w-4 h-4" /> View External Members
         </Link>
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <StatCard 
-          title="Total Members" 
+          title="Total Club Members" 
           value={clubStats?.totalMembers || 0} 
-          subtitle="Registered users" 
+          subtitle="All registered users" 
           icon={UsersRound} 
         />
         <StatCard 
-          title="Active Teams" 
-          value={teamStatsList.length} 
-          subtitle="Managed groups" 
+          title="Total Team Members" 
+          value={clubStats?.teamMemberCount || 0} 
+          subtitle="Assigned to a team" 
+          icon={Users} 
+        />
+        <StatCard 
+          title="External Members" 
+          value={clubStats?.externalCount || 0} 
+          subtitle="Waiting assignment" 
+          icon={UserMinus} 
+        />
+        <StatCard 
+          title="Total Teams" 
+          value={clubStats?.totalTeams || 0} 
+          subtitle="Active groups" 
           icon={Database} 
         />
         <StatCard 
           title="Attendance Rate" 
           value={`${clubStats?.percentage || 0}%`} 
-          subtitle="Overall average" 
+          subtitle="Overall club average" 
           icon={TrendingUp} 
         />
         <StatCard 
@@ -172,7 +188,7 @@ const AdminDashboard = () => {
       {/* Team Performance Table */}
       <div className="card overflow-hidden mb-12">
         <div className="px-6 py-5 border-b border-theme-border-subtle flex items-center justify-between">
-          <h3 className="font-semibold text-theme-primary">Team Performance</h3>
+          <h3 className="font-semibold text-theme-primary">Team Overview</h3>
           <Link to="/admin/analysis" className="text-sm font-medium text-theme-accent hover:text-theme-primary-hover transition-colors">
             View Analytics &rarr;
           </Link>
