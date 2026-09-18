@@ -20,7 +20,7 @@ const Layout = ({ children, title, description }) => {
   };
 
   return (
-    <div className="flex min-h-screen bg-theme-bg text-theme-text font-sans relative">
+    <div className="flex min-h-screen bg-theme-bg text-theme-text font-sans relative overflow-x-hidden">
       
       {/* Background Watermark */}
       <div 
@@ -37,13 +37,12 @@ const Layout = ({ children, title, description }) => {
       
       <RadialNavigation />
       
-      {/* Main Content Area - Full Width */}
-      <div className="flex-1 flex flex-col min-w-0 z-10 relative">
+      {/* Main Content Area - Absolutely Full Width */}
+      <div className="flex-1 flex flex-col min-w-0 z-10 relative w-full">
         
         {/* Top Header */}
-        <header className="h-[88px] flex items-center justify-between px-6 lg:px-10 pl-16 lg:pl-20 border-b border-theme-border-subtle bg-white/70 backdrop-blur-md sticky top-0 z-30">
-          
-          <div className="flex-1 min-w-0 pr-4">
+        <header className="h-[88px] flex items-center justify-between px-6 lg:px-10 border-b border-theme-border-subtle bg-white/70 backdrop-blur-md sticky top-0 z-30">
+          <div className="flex-1 min-w-0 pr-4 pl-14 lg:pl-16">
             <h1 className="text-[22px] font-bold text-theme-primary truncate">
               {getGreeting()}, {user?.name?.split(' ')[0]} 👋
             </h1>
@@ -87,7 +86,8 @@ const Layout = ({ children, title, description }) => {
           </div>
         </header>
 
-        <main className="flex-1 p-6 lg:p-10 pl-16 lg:pl-20 max-w-[1400px] mx-auto w-full">
+        {/* Dashboard Content */}
+        <main className="flex-1 p-6 lg:p-10 pl-20 lg:pl-24 max-w-full mx-auto w-full">
           {/* Mobile context */}
           <div className="sm:hidden mb-6">
             <h2 className="text-lg font-bold text-theme-primary">{title}</h2>

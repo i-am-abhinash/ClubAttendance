@@ -80,12 +80,12 @@ const RadialNavigation = () => {
   const allItems = [...navItems, { action: handleLogout, icon: LogOut, label: 'Logout', isLogout: true }];
   const totalItems = allItems.length;
 
-  const radius = isMobile ? 120 : 180; 
+  const radius = isMobile ? 100 : 140; 
 
   const getAngle = (index, total) => {
     if (total === 1) return 0;
-    const maxSpread = 150; // -75 to +75 degrees
-    const itemSpread = 32; 
+    const maxSpread = 160; 
+    const itemSpread = 34; 
     const actualSpread = Math.min(maxSpread, (total - 1) * itemSpread);
     const startAngle = -(actualSpread / 2);
     const step = actualSpread / (total - 1);
@@ -96,7 +96,7 @@ const RadialNavigation = () => {
     <>
       <div 
         className={clsx(
-          "fixed inset-0 bg-slate-900/5 backdrop-blur-[2px] z-40 transition-all duration-300",
+          "fixed inset-0 bg-slate-900/5 backdrop-blur-[1px] z-40 transition-all duration-300",
           isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
         onClick={() => setIsOpen(false)}
@@ -104,67 +104,60 @@ const RadialNavigation = () => {
 
       <aside 
         ref={navRef}
-        className="fixed top-1/2 left-0 -translate-y-1/2 z-50 flex items-center pointer-events-none"
+        className="fixed top-1/2 left-3 sm:left-4 -translate-y-1/2 z-50 flex items-center pointer-events-none"
       >
         <button
           onClick={() => setIsOpen(!isOpen)}
           aria-label={isOpen ? "Close navigation" : "Open navigation"}
           className={clsx(
-            "relative flex items-center justify-center bg-white rounded-r-full border border-l-0 border-theme-border shadow-soft transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-accent pointer-events-auto group",
-            "w-12 h-20 sm:w-16 sm:h-24",
-            isOpen ? "scale-105 shadow-md border-theme-accent/30 bg-theme-bg" : "hover:shadow-md hover:bg-theme-bg hover:w-14 sm:hover:w-18"
+            "relative flex items-center justify-center bg-white rounded-[14px] border border-theme-border shadow-soft transition-all duration-300 focus:outline-none pointer-events-auto group p-1.5 sm:p-2",
+            isOpen ? "scale-105 shadow-md border-theme-accent/30" : "hover:shadow-md hover:bg-theme-bg"
           )}
+          style={{ width: '80px', height: '48px' }} // Compact pill-like container for the logo
         >
-          <div className="w-8 h-8 sm:w-10 sm:h-10 relative overflow-hidden rounded-full border border-theme-border/50 bg-white shadow-inner flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+          <div className="w-full h-full relative flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-105">
             <img 
               src="/mitra-logo.jpg" 
               alt="MITRA" 
-              className="w-[120%] h-[120%] object-cover mix-blend-multiply" 
+              className="w-full h-full object-contain mix-blend-multiply" 
             />
           </div>
         </button>
 
-        <div className="absolute top-1/2 left-[calc(100%-8px)] w-0 h-0 pointer-events-none">
+        <div className="absolute top-1/2 left-full ml-4 w-0 h-0 pointer-events-none">
           {allItems.map((item, index) => {
             const angle = getAngle(index, totalItems);
+            // We want the items to fan out. Since the origin is exactly to the right of the button,
+            // we can apply standard polar coordinates.
             const x = radius * Math.cos(angle);
             const y = radius * Math.sin(angle);
-            const delay = index * 40; 
+            const delay = index * 35; 
 
             const isActive = location.pathname === item.to;
 
             const style = isOpen ? {
-              transform: `translate(calc(${x}px - 50%), calc(${y}px - 50%)) scale(1)`,
+              transform: `translate(${x}px, calc(${y}px - 50%)) scale(1)`,
               opacity: 1,
               transitionDelay: `${delay}ms`,
             } : {
-              transform: `translate(0px, 0px) scale(0)`,
+              transform: `translate(0px, -50%) scale(0.8)`,
               opacity: 0,
               transitionDelay: '0ms',
             };
 
             const NodeContent = () => (
-              <div className="relative group flex items-center">
-                <div 
-                  className={clsx(
-                    "w-[48px] h-[48px] sm:w-[56px] sm:h-[56px] rounded-full flex items-center justify-center transition-transform duration-200 relative shadow-soft",
-                    "group-hover:-translate-y-[4px] group-hover:scale-[1.06] group-hover:shadow-[0_8px_20px_rgba(0,0,0,0.12)]",
-                    isActive ? "bg-theme-accent-light text-theme-accent shadow-md border border-theme-accent/20" : "bg-white text-theme-text-secondary border border-theme-border group-hover:text-theme-primary group-hover:bg-theme-bg",
-                    item.isLogout && "group-hover:!text-theme-absent"
-                  )}
-                >
-                  <item.icon className="w-5 h-5 sm:w-6 sm:h-6" />
-                </div>
-                
-                <div 
-                  className={clsx(
-                    "absolute left-[calc(100%+12px)] px-3 py-1.5 text-[12px] sm:text-[13px] font-semibold tracking-wide whitespace-nowrap rounded-lg shadow-sm transition-all duration-200 pointer-events-none",
-                    isActive ? "bg-white text-theme-accent border border-theme-accent/20" : "bg-white/95 text-theme-text-secondary border border-theme-border backdrop-blur-sm group-hover:text-theme-primary group-hover:border-theme-border-subtle",
-                    item.isLogout && "group-hover:!text-theme-absent"
-                  )}
-                >
+              <div 
+                className={clsx(
+                  "h-[44px] sm:h-[48px] px-4 rounded-[12px] flex items-center gap-2.5 transition-transform duration-200 relative shadow-sm",
+                  "hover:-translate-y-[4px] hover:scale-[1.05] hover:shadow-[0_6px_16px_rgba(0,0,0,0.1)]",
+                  isActive ? "bg-theme-accent-light text-theme-accent shadow-md border border-theme-accent/20" : "bg-white/95 backdrop-blur-sm text-theme-text-secondary border border-theme-border hover:text-theme-primary hover:border-theme-border-subtle hover:bg-white",
+                  item.isLogout && "hover:!text-theme-absent"
+                )}
+              >
+                <item.icon className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+                <span className="text-[13px] sm:text-[14px] font-medium tracking-wide whitespace-nowrap">
                   {item.label}
-                </div>
+                </span>
               </div>
             );
 
@@ -175,7 +168,7 @@ const RadialNavigation = () => {
                   onClick={(e) => { e.preventDefault(); item.action(); }} 
                   style={style} 
                   className={clsx(
-                    "absolute focus:outline-none transition-all duration-[350ms] ease-[cubic-bezier(0.175,0.885,0.32,1.275)]",
+                    "absolute focus:outline-none origin-left transition-all duration-[300ms] ease-out",
                     isOpen ? "pointer-events-auto" : "pointer-events-none"
                   )}
                   tabIndex={isOpen ? 0 : -1}
@@ -191,7 +184,7 @@ const RadialNavigation = () => {
                 to={item.to} 
                 style={style} 
                 className={clsx(
-                  "absolute focus:outline-none transition-all duration-[350ms] ease-[cubic-bezier(0.175,0.885,0.32,1.275)]",
+                  "absolute focus:outline-none origin-left transition-all duration-[300ms] ease-out",
                   isOpen ? "pointer-events-auto" : "pointer-events-none"
                 )}
                 tabIndex={isOpen ? 0 : -1}
