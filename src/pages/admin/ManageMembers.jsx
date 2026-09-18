@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '../../components/common/Layout';
 import { fetchMembers, createMember, deleteMember } from '../../services/memberService';
 import { fetchTeams } from '../../services/teamService';
@@ -112,7 +112,6 @@ const ManageMembers = () => {
               <select required className="w-full border border-theme-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-theme-accent" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
                 <option value="Member">Member</option>
                 <option value="Team Leader">Team Leader</option>
-                <option value="Admin">Admin</option>
               </select>
             </div>
             

@@ -21,6 +21,8 @@ import ExternalMembersLeader from '../pages/leader/ExternalMembers';
 import MemberDashboard from '../pages/member/MemberDashboard';
 import MyAttendance from '../pages/member/MyAttendance';
 
+import Settings from '../pages/settings/Settings';
+
 const AppRoutes = () => {
   const { user } = useAuth();
 
@@ -37,6 +39,9 @@ const AppRoutes = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       
+      {/* Shared Authenticated Routes */}
+      <Route path="/settings" element={<ProtectedRoute allowedRoles={['Admin', 'Team Leader', 'Member']}><Settings /></ProtectedRoute>} />
+
       {/* Admin Routes */}
       <Route path="/admin" element={<ProtectedRoute allowedRoles={['Admin']}><AdminDashboard /></ProtectedRoute>} />
       <Route path="/admin/teams" element={<ProtectedRoute allowedRoles={['Admin']}><ManageTeams /></ProtectedRoute>} />

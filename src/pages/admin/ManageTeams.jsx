@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import Layout from '../../components/common/Layout';
 import { fetchTeams, createTeam, deleteTeam } from '../../services/teamService';
-import { fetchMembers } from '../../services/memberService';
+import { fetchMembers, updateMember } from '../../services/memberService';
 import { Plus, Trash2, Users } from 'lucide-react';
 
 const ManageTeams = () => {
   const [teams, setTeams] = useState([]);
+  const [members, setMembers] = useState([]);
   const [teamStats, setTeamStats] = useState({});
   const [newTeamName, setNewTeamName] = useState('');
   const [loading, setLoading] = useState(true);
@@ -27,11 +28,13 @@ const ManageTeams = () => {
         const leaders = teamMembers.filter(m => m.role === 'Team Leader');
         stats[t.id] = {
           memberCount: teamMembers.length,
-          leaders: leaders.map(l => l.name).join(', ') || 'No Leader'
+          leaders: leaders.map(l => l.name).join(', ') || 'None',
+          leaderId: leaders.length > 0 ? leaders[0].id : ''
         };
       });
       
       setTeams(tData);
+      setMembers(mData);
       setTeamStats(stats);
     } catch (err) {
       console.error(err);
@@ -63,6 +66,28 @@ const ManageTeams = () => {
       alert("Failed to delete team.");
     }
   };
+
+  const handleAssignLeader = async (teamId, leaderId) => {
+    try {
+      // Find the old leader and remove them from the team
+      const oldLeader = members.find(m => m.teamId === teamId && m.role === 'Team Leader');
+      if (oldLeader && oldLeader.id !== leaderId) {
+        await updateMember(oldLeader.id, { teamId: null });
+      }
+
+      // Assign the new leader
+      if (leaderId) {
+        await updateMember(leaderId, { teamId: teamId });
+      }
+
+      loadData();
+    } catch (error) {
+      console.error(error);
+      alert("Failed to assign team leader.");
+    }
+  };
+
+  const availableLeaders = members.filter(m => m.role === 'Team Leader');
 
   return (
     <Layout title="Teams" description="Organize members and monitor team structure.">
@@ -135,8 +160,19 @@ const ManageTeams = () => {
               
               <div className="mt-auto pt-4 border-t border-theme-border-subtle">
                 <div className="flex flex-col gap-1">
-                  <span className="text-xs font-semibold text-theme-muted uppercase">Team Leaders</span>
-                  <span className="text-sm text-theme-text truncate">{teamStats[team.id]?.leaders || 'None'}</span>
+                  <label className="text-xs font-semibold text-theme-muted uppercase">Team Leader</label>
+                  <select
+                    className="w-full text-sm border border-theme-border rounded py-1 px-2 focus:outline-none focus:border-theme-accent"
+                    value={teamStats[team.id]?.leaderId || ''}
+                    onChange={(e) => handleAssignLeader(team.id, e.target.value)}
+                  >
+                    <option value="">[ Select Team Leader ]</option>
+                    {availableLeaders.map(leader => (
+                      <option key={leader.id} value={leader.id}>
+                        {leader.name} {leader.teamId && leader.teamId !== team.id ? '(Reassign)' : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>

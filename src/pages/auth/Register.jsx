@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { doc, setDoc, getDocs, collection, query, where, limit } from 'firebase/firestore';
+import { checkAdminExists, setAdminExists } from '../../services/configService';
+import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 
 const Register = () => {
@@ -9,34 +10,24 @@ const Register = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
-  const [adminExists, setAdminExists] = useState(false);
+  const [adminExists, setAdminExistsState] = useState(false);
   const [initError, setInitError] = useState('');
   const { register } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkExistingAdmin = async () => {
+    const initCheck = async () => {
       try {
-        const q = query(collection(db, 'users'), where('role', '==', 'Admin'), limit(1));
-        const checkPromise = getDocs(q);
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000));
-        
-        const querySnapshot = await Promise.race([checkPromise, timeoutPromise]);
-        
-        if (!querySnapshot.empty) {
-          setAdminExists(true);
+        const exists = await checkAdminExists();
+        if (exists) {
+          setAdminExistsState(true);
         }
       } catch (err) {
-        if (err.message === 'timeout') {
-          setInitError('Database connection timed out.');
-        } else {
-          setInitError('Could not verify database status. ' + err.message);
-        }
+        setInitError('Could not verify database status. ' + err.message);
       }
       setChecking(false);
     };
-
-    checkExistingAdmin();
+    initCheck();
   }, []);
 
   const handleSubmit = async (e) => {
@@ -46,11 +37,16 @@ const Register = () => {
     setLoading(true);
     try {
       const userCredential = await register(formData.email, formData.password);
+      
+      // Batch creation: Create user doc and set adminExists
+      // Note: firestore rules enforce that this only works if club/status does not exist!
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         name: formData.name,
         email: formData.email,
         role: 'Admin'
       });
+      await setAdminExists();
+      
       navigate('/admin');
     } catch (err) {
       setError(err.message || 'Failed to register');
@@ -89,8 +85,8 @@ const Register = () => {
             </div>
           ) : adminExists ? (
             <div className="text-center">
-              <div className="bg-theme-late-bg text-theme-late p-4 rounded-xl mb-6 border border-theme-late/20 text-sm">
-                An Admin account has already been registered. Only one admin is allowed per club.
+              <div className="bg-theme-late-bg text-theme-late p-4 rounded-xl mb-6 border border-theme-late/20 text-sm font-medium">
+                Registration is currently unavailable. Please contact the club administrator.
               </div>
               <Link to="/login" className="flex w-full justify-center rounded-lg bg-theme-primary px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-theme-primary-hover">
                 Return to Login

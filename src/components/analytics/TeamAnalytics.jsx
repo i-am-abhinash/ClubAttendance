@@ -1,4 +1,4 @@
-﻿import React, { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { 
   BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -121,7 +121,7 @@ export const TeamAnalytics = ({ records, members }) => {
 
       {/* Weekly Breakdown */}
       <div className="card p-6">
-        <h3 className="font-bold text-theme-primary mb-6">Weekly Distribution</h3>
+        <h3 className="font-bold text-theme-primary mb-6">Weekday Attendance Pattern</h3>
         <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={weeklyData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>

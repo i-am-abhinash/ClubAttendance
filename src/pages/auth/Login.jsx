@@ -1,14 +1,28 @@
-import React, { useState } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import { checkAdminExists } from '../../services/configService';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [adminExists, setAdminExists] = useState(true); // default true to avoid flicker
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const initCheck = async () => {
+      try {
+        const exists = await checkAdminExists();
+        setAdminExists(exists);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    initCheck();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -93,12 +107,14 @@ const Login = () => {
             </div>
           </form>
 
-          <p className="mt-10 text-center text-sm text-theme-text-secondary">
-            Need an Admin account?{' '}
-            <Link to="/register" className="font-semibold leading-6 text-theme-accent hover:text-theme-primary transition-colors">
-              Register here
-            </Link>
-          </p>
+          {!adminExists && (
+            <p className="mt-10 text-center text-sm text-theme-text-secondary">
+              Need an Admin account?{' '}
+              <Link to="/register" className="font-semibold leading-6 text-theme-accent hover:text-theme-primary transition-colors">
+                Register here
+              </Link>
+            </p>
+          )}
         </div>
       </div>
     </div>

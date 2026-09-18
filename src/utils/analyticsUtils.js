@@ -1,4 +1,4 @@
-﻿import { isSameDay, isSameWeek, isSameMonth, parseISO } from 'date-fns';
+﻿import { isSameDay, isSameWeek, isSameMonth, parseISO, format, subMonths, startOfMonth, eachMonthOfInterval } from 'date-fns';
 
 export const calculateAttendanceStats = (records, members = []) => {
   const total = records.length;
@@ -6,9 +6,33 @@ export const calculateAttendanceStats = (records, members = []) => {
   const absent = records.filter(r => r.status === 'Absent').length;
   const late = records.filter(r => r.status === 'Late').length;
   
+  // Present = 1, Late = 0.5, Absent = 0
   const percentage = total === 0 ? 0 : Math.round(((present + (late * 0.5)) / total) * 100);
 
-  return { total, present, absent, late, percentage, totalRecords: total };
+  // Generate trendData based on the last 6 months
+  const now = new Date();
+  const past6Months = eachMonthOfInterval({
+    start: subMonths(startOfMonth(now), 5),
+    end: startOfMonth(now)
+  });
+
+  const trendData = past6Months.map(monthDate => {
+    const monthStr = format(monthDate, 'MMM');
+    const monthRecords = records.filter(r => isSameMonth(parseISO(r.date), monthDate));
+    const mPresent = monthRecords.filter(r => r.status === 'Present').length;
+    const mAbsent = monthRecords.filter(r => r.status === 'Absent').length;
+    const mLate = monthRecords.filter(r => r.status === 'Late').length;
+    
+    return {
+      date: monthStr,
+      present: mPresent,
+      absent: mAbsent,
+      late: mLate,
+      total: monthRecords.length
+    };
+  });
+
+  return { total, present, absent, late, percentage, totalRecords: total, trendData };
 };
 
 export const applyFilters = (records, filters) => {

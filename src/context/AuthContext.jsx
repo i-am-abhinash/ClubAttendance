@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { subscribeToAuthChanges, loginUser, logoutUser } from '../services/authService';
+﻿import React, { createContext, useContext, useState, useEffect } from 'react';
+import { subscribeToAuthChanges, loginUser, logoutUser, registerUser, changeUserPassword } from '../services/authService';
 
 const AuthContext = createContext();
 
@@ -22,8 +22,16 @@ export const AuthProvider = ({ children }) => {
     return loginUser(email, password);
   };
 
+  const register = async (email, password) => {
+    return registerUser(email, password);
+  };
+
   const logout = async () => {
     await logoutUser();
+  };
+
+  const changePassword = async (currentPassword, newPassword) => {
+    return changeUserPassword(currentPassword, newPassword);
   };
 
   const value = {
@@ -31,6 +39,8 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     logout,
+    register,
+    changePassword,
     isAdmin: user?.role === 'Admin',
     isLeader: user?.role === 'Team Leader',
     isMember: user?.role === 'Member',

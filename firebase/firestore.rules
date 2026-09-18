@@ -2,7 +2,6 @@
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper functions
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -27,6 +26,12 @@ service cloud.firestore {
       return getUserData().teamId;
     }
 
+    match /club/status {
+      allow read: if true;
+      allow create: if !exists(/databases/$(database)/documents/club/status) && request.auth != null;
+      allow update: if isAdmin();
+    }
+
     match /teams/{teamId} {
       allow read: if isAuthenticated();
       // Only Admin can create/update/delete teams
@@ -34,35 +39,28 @@ service cloud.firestore {
     }
     
     match /users/{userId} {
-      allow read: if isAuthenticated();
+      // Admin: read all
+      // Team Leader: read self, own team, and external members (teamId == null)
+      // Member: read self
+      allow read: if isAdmin()
+                  || (isLeader() && (!("teamId" in resource.data) || resource.data.teamId == userTeamId() || resource.data.teamId == null || userId == request.auth.uid))
+                  || (isAuthenticated() && userId == request.auth.uid);
       
-      // Admin can do anything
-      // A Team Leader can update a user IF they are only updating the teamId
-      // and they are setting it to their own teamId, OR setting it to null (removing from their team)
-      // A user can update their own profile fields EXCEPT role and teamId
+      // Creating Admin is ONLY allowed if club/status doesn't exist
+      allow create: if (isAdmin() && request.resource.data.role != 'Admin') 
+                    || (!exists(/databases/$(database)/documents/club/status) && request.resource.data.role == 'Admin' && request.auth.uid == userId);
       
-      allow create: if isAdmin();
       allow delete: if isAdmin();
       
-      allow update: if isAdmin() 
-        || (
-           isAuthenticated() 
-           && request.auth.uid == userId 
-           && request.resource.data.role == resource.data.role 
-           && request.resource.data.teamId == resource.data.teamId
-        )
-        || (
-           isLeader()
-           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teamId'])
-           && (
-             request.resource.data.teamId == userTeamId() || 
-             request.resource.data.teamId == null
-           )
-           && (
-             resource.data.teamId == userTeamId() || 
-             resource.data.teamId == null
-           )
-        );
+      allow update: if 
+        // Self-update for anyone (no role/team change)
+        (isAuthenticated() && request.auth.uid == userId && request.resource.data.role == resource.data.role && request.resource.data.teamId == resource.data.teamId)
+        || 
+        // Admin updating someone else (cannot change them to Admin)
+        (isAdmin() && request.auth.uid != userId && request.resource.data.role != 'Admin')
+        ||
+        // Team Leader managing team membership
+        (isLeader() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teamId']) && (request.resource.data.teamId == userTeamId() || request.resource.data.teamId == null) && (resource.data.teamId == userTeamId() || resource.data.teamId == null));
     }
     
     match /attendance/{recordId} {
@@ -71,9 +69,7 @@ service cloud.firestore {
                   || (isAuthenticated() && resource.data.userId == request.auth.uid);
       
       // ONLY Admin can create or update attendance.
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
   }
 }
