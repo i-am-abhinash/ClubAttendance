@@ -2,8 +2,8 @@
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { 
-  LayoutDashboard, Users, Settings, BarChart3, 
-  CheckSquare, LogOut, UserMinus
+  Home, Users, Settings, BarChart2, 
+  CalendarCheck, LogOut, UserMinus
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -12,8 +12,9 @@ const RadialNavigation = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const navRef = useRef(null);
+  
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -57,38 +58,42 @@ const RadialNavigation = () => {
   let navItems = [];
   if (isAdmin) {
     navItems = [
-      { to: '/admin', icon: LayoutDashboard, label: 'Overview' },
-      { to: '/admin/teams', icon: Settings, label: 'Teams' },
-      { to: '/admin/members', icon: Users, label: 'Members' },
-      { to: '/admin/external-members', icon: UserMinus, label: 'External' },
-      { to: '/admin/attendance', icon: CheckSquare, label: 'Attendance' },
-      { to: '/admin/analysis', icon: BarChart3, label: 'Analytics' },
+      { to: '/admin', icon: Home, label: 'Dashboard' },
+      { to: '/admin/teams', icon: Users, label: 'Teams' },
+      { to: '/admin/members', icon: UserMinus, label: 'Members' },
+      { to: '/admin/external-members', icon: Users, label: 'External' },
+      { to: '/admin/attendance', icon: CalendarCheck, label: 'Attendance' },
+      { to: '/admin/analysis', icon: BarChart2, label: 'Analytics' },
     ];
   } else if (isLeader) {
     navItems = [
-      { to: '/leader', icon: LayoutDashboard, label: 'Dashboard' },
-      { to: '/leader/external-members', icon: UserMinus, label: 'External' },
-      { to: '/leader/analysis', icon: BarChart3, label: 'Analytics' },
+      { to: '/leader', icon: Home, label: 'Dashboard' },
+      { to: '/leader/external-members', icon: Users, label: 'External' },
+      { to: '/leader/analysis', icon: BarChart2, label: 'Analytics' },
     ];
   } else if (isMember) {
     navItems = [
-      { to: '/member', icon: LayoutDashboard, label: 'Dashboard' },
-      { to: '/member/attendance', icon: CheckSquare, label: 'Attendance' },
+      { to: '/member', icon: Home, label: 'Dashboard' },
+      { to: '/member/attendance', icon: CalendarCheck, label: 'Attendance' },
     ];
   }
 
-  const allItems = [...navItems, { action: handleLogout, icon: LogOut, label: 'Logout', isLogout: true }];
+  const allItems = [
+    ...navItems, 
+    { to: '#settings', icon: Settings, label: 'Settings' },
+    { action: handleLogout, icon: LogOut, label: 'Logout', isLogout: true }
+  ];
   const totalItems = allItems.length;
 
-  const radius = isMobile ? 100 : 140; 
+  const radius = isMobile ? 95 : 120; 
+  const arcRadius = radius - 18; 
 
   const getAngle = (index, total) => {
     if (total === 1) return 0;
-    const maxSpread = 160; 
-    const itemSpread = 34; 
-    const actualSpread = Math.min(maxSpread, (total - 1) * itemSpread);
-    const startAngle = -(actualSpread / 2);
-    const step = actualSpread / (total - 1);
+    const startAngle = -82; 
+    const endAngle = 82; 
+    const spread = endAngle - startAngle;
+    const step = spread / (total - 1);
     return (startAngle + index * step) * (Math.PI / 180);
   };
 
@@ -96,68 +101,101 @@ const RadialNavigation = () => {
     <>
       <div 
         className={clsx(
-          "fixed inset-0 bg-slate-900/5 backdrop-blur-[1px] z-40 transition-all duration-300",
-          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          "fixed inset-0 z-40 transition-all duration-300 pointer-events-none",
+          isOpen ? "bg-slate-900/5 backdrop-blur-[1px] opacity-100 pointer-events-auto" : "opacity-0"
         )}
         onClick={() => setIsOpen(false)}
       />
 
       <aside 
         ref={navRef}
-        className="fixed top-1/2 left-3 sm:left-4 -translate-y-1/2 z-50 flex items-center pointer-events-none"
+        className="fixed top-1/2 left-6 sm:left-8 -translate-y-1/2 z-50 flex items-center justify-center pointer-events-none"
+        style={{ width: '0px', height: '0px' }} 
       >
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label={isOpen ? "Close navigation" : "Open navigation"}
+        
+        {/* Arc Line & Nodes */}
+        <div 
           className={clsx(
-            "relative flex items-center justify-center bg-white rounded-[14px] border border-theme-border shadow-soft transition-all duration-300 focus:outline-none pointer-events-auto group p-1.5 sm:p-2",
-            isOpen ? "scale-105 shadow-md border-theme-accent/30" : "hover:shadow-md hover:bg-theme-bg"
+            "absolute top-0 left-0 transition-all duration-300 ease-out pointer-events-none flex items-center justify-center",
+            isOpen ? "opacity-100 scale-100" : "opacity-0 scale-50"
           )}
-          style={{ width: '80px', height: '48px' }} // Compact pill-like container for the logo
         >
-          <div className="w-full h-full relative flex items-center justify-center overflow-hidden transition-transform duration-300 group-hover:scale-105">
-            <img 
-              src="/mitra-logo.jpg" 
-              alt="MITRA" 
-              className="w-full h-full object-contain mix-blend-multiply" 
+          <svg 
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 overflow-visible" 
+            width={radius * 2} 
+            height={radius * 2.5}
+            style={{ pointerEvents: 'none' }}
+          >
+            <path 
+              d={`M ${radius},${radius * 1.25 - arcRadius} A ${arcRadius} ${arcRadius} 0 0 1 ${radius},${radius * 1.25 + arcRadius}`}
+              fill="none" 
+              stroke="#5865F2" 
+              strokeWidth="1.5" 
+              strokeOpacity="0.4"
+              style={{ filter: 'drop-shadow(0 0 4px rgba(88,101,242,0.5))' }}
             />
-          </div>
-        </button>
+            {allItems.map((item, index) => {
+              const angle = getAngle(index, totalItems);
+              const cx = radius + arcRadius * Math.cos(angle); 
+              const cy = radius * 1.25 + arcRadius * Math.sin(angle);
+              return (
+                <circle 
+                  key={`dot-${index}`}
+                  cx={cx} 
+                  cy={cy} 
+                  r="3.5" 
+                  fill="#FFFFFF" 
+                  stroke="#5865F2" 
+                  strokeWidth="1.5"
+                  style={{ filter: 'drop-shadow(0 0 4px rgba(255,255,255,0.9))' }}
+                />
+              );
+            })}
+          </svg>
+        </div>
 
-        <div className="absolute top-1/2 left-full ml-4 w-0 h-0 pointer-events-none">
+        {/* Floating Navigation Buttons */}
+        <div className="absolute top-0 left-0 pointer-events-none">
           {allItems.map((item, index) => {
             const angle = getAngle(index, totalItems);
-            // We want the items to fan out. Since the origin is exactly to the right of the button,
-            // we can apply standard polar coordinates.
             const x = radius * Math.cos(angle);
             const y = radius * Math.sin(angle);
-            const delay = index * 35; 
+            const delay = index * 40; 
 
             const isActive = location.pathname === item.to;
 
             const style = isOpen ? {
-              transform: `translate(${x}px, calc(${y}px - 50%)) scale(1)`,
+              transform: `translate(${x}px, ${y}px) scale(1)`,
               opacity: 1,
               transitionDelay: `${delay}ms`,
             } : {
-              transform: `translate(0px, -50%) scale(0.8)`,
+              transform: `translate(0px, 0px) scale(0)`,
               opacity: 0,
               transitionDelay: '0ms',
             };
 
             const NodeContent = () => (
-              <div 
-                className={clsx(
-                  "h-[44px] sm:h-[48px] px-4 rounded-[12px] flex items-center gap-2.5 transition-transform duration-200 relative shadow-sm",
-                  "hover:-translate-y-[4px] hover:scale-[1.05] hover:shadow-[0_6px_16px_rgba(0,0,0,0.1)]",
-                  isActive ? "bg-theme-accent-light text-theme-accent shadow-md border border-theme-accent/20" : "bg-white/95 backdrop-blur-sm text-theme-text-secondary border border-theme-border hover:text-theme-primary hover:border-theme-border-subtle hover:bg-white",
-                  item.isLogout && "hover:!text-theme-absent"
-                )}
-              >
-                <item.icon className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
-                <span className="text-[13px] sm:text-[14px] font-medium tracking-wide whitespace-nowrap">
+              <div className="relative group flex flex-col items-center justify-center -translate-x-1/2 -translate-y-1/2">
+                <div 
+                  className={clsx(
+                    "w-[44px] h-[44px] sm:w-[48px] sm:h-[48px] rounded-full flex items-center justify-center transition-all duration-[200ms] ease-out shadow-[0_2px_8px_rgba(0,0,0,0.06)] border cursor-pointer",
+                    "group-hover:-translate-y-[3px] group-hover:scale-[1.08] group-hover:shadow-[0_8px_20px_rgba(0,0,0,0.12)]",
+                    isActive ? "bg-theme-accent-light text-theme-accent border-theme-accent shadow-[0_0_15px_rgba(88,101,242,0.4)]" : "bg-white text-theme-primary border-theme-border hover:border-theme-accent/30",
+                    item.isLogout && "group-hover:!text-theme-absent group-hover:!border-theme-absent/30"
+                  )}
+                >
+                  <item.icon className="w-[20px] h-[20px] sm:w-[22px] sm:h-[22px]" />
+                </div>
+                
+                <div 
+                  className={clsx(
+                    "absolute top-[calc(100%+8px)] text-[12px] sm:text-[13px] font-medium whitespace-nowrap transition-colors duration-200 pointer-events-none text-center tracking-wide",
+                    isActive ? "text-theme-accent font-bold" : "text-theme-text group-hover:text-theme-primary font-semibold",
+                    item.isLogout && "group-hover:!text-theme-absent"
+                  )}
+                >
                   {item.label}
-                </span>
+                </div>
               </div>
             );
 
@@ -165,10 +203,10 @@ const RadialNavigation = () => {
               return (
                 <button 
                   key="logout" 
-                  onClick={(e) => { e.preventDefault(); item.action(); }} 
+                  onClick={(e) => { e.preventDefault(); item.action(); setIsOpen(false); }} 
                   style={style} 
                   className={clsx(
-                    "absolute focus:outline-none origin-left transition-all duration-[300ms] ease-out",
+                    "absolute top-0 left-0 focus:outline-none transition-all duration-[300ms] ease-[cubic-bezier(0.2,0.8,0.2,1)]",
                     isOpen ? "pointer-events-auto" : "pointer-events-none"
                   )}
                   tabIndex={isOpen ? 0 : -1}
@@ -182,9 +220,10 @@ const RadialNavigation = () => {
               <NavLink 
                 key={item.to} 
                 to={item.to} 
+                onClick={() => setIsOpen(false)}
                 style={style} 
                 className={clsx(
-                  "absolute focus:outline-none origin-left transition-all duration-[300ms] ease-out",
+                  "absolute top-0 left-0 focus:outline-none transition-all duration-[300ms] ease-[cubic-bezier(0.2,0.8,0.2,1)]",
                   isOpen ? "pointer-events-auto" : "pointer-events-none"
                 )}
                 tabIndex={isOpen ? 0 : -1}
@@ -194,6 +233,27 @@ const RadialNavigation = () => {
             );
           })}
         </div>
+
+        {/* MITRA Central Logo */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          aria-label={isOpen ? "Close navigation" : "Open navigation"}
+          className={clsx(
+            "absolute top-0 left-0 -translate-y-1/2 -translate-x-1/2 rounded-full flex items-center justify-center transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-theme-accent pointer-events-auto group",
+            "w-[56px] h-[56px] sm:w-[64px] sm:h-[64px]", 
+            "bg-[#0A101D] border border-[#2B354E] shadow-[inset_0_0_12px_rgba(255,255,255,0.05),_0_0_20px_rgba(88,101,242,0.3)]",
+            isOpen ? "scale-95 shadow-[inset_0_0_20px_rgba(255,255,255,0.1),_0_0_25px_rgba(88,101,242,0.6)]" : "hover:scale-105 hover:shadow-[inset_0_0_15px_rgba(255,255,255,0.08),_0_0_25px_rgba(88,101,242,0.4)]"
+          )}
+        >
+          <div className="w-[85%] h-[85%] rounded-full flex items-center justify-center overflow-hidden">
+             <img 
+              src="/mitra-logo.jpg" 
+              alt="MITRA" 
+              className="w-full h-full object-contain"
+              style={{ filter: 'invert(1) brightness(2)', mixBlendMode: 'screen' }} 
+            />
+          </div>
+        </button>
       </aside>
     </>
   );
