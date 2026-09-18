@@ -101,15 +101,16 @@ const RadialNavigation = () => {
   ];
   const totalItems = allItems.length;
 
-  const radius = isMobile ? 75 : 90; 
+  const radius = isMobile ? 105 : 125; 
   const arcRadius = radius - 15; 
 
   const getAngle = (index, total) => {
     if (total === 1) return 0;
-    const startAngle = -80; 
-    const endAngle = 80; 
-    const spread = endAngle - startAngle;
-    const step = spread / (total - 1);
+    const maxSpread = 175; // -87.5 to 87.5
+    const itemSpread = 26; 
+    const actualSpread = Math.min(maxSpread, (total - 1) * itemSpread);
+    const startAngle = -(actualSpread / 2);
+    const step = actualSpread / (total - 1);
     return (startAngle + index * step) * (Math.PI / 180);
   };
 
@@ -178,7 +179,7 @@ const RadialNavigation = () => {
             const angle = getAngle(index, totalItems);
             const x = radius * Math.cos(angle);
             const y = radius * Math.sin(angle);
-            const delay = index * 50; 
+            const delay = index * 40; 
 
             const isActive = location.pathname === item.to;
 
@@ -193,23 +194,24 @@ const RadialNavigation = () => {
             };
 
             const NodeContent = () => (
-              <div className="relative group flex flex-col items-center justify-center -translate-x-1/2 -translate-y-1/2">
+              <div className="relative group flex items-center justify-center -translate-x-1/2 -translate-y-1/2">
                 <div 
                   className={clsx(
-                    "w-[44px] h-[44px] sm:w-[48px] sm:h-[48px] rounded-full flex items-center justify-center transition-all duration-[200ms] ease-out shadow-[0_2px_8px_rgba(0,0,0,0.06)] border cursor-pointer",
+                    "w-[40px] h-[40px] sm:w-[42px] sm:h-[42px] rounded-full flex items-center justify-center transition-all duration-[200ms] ease-out shadow-[0_2px_8px_rgba(0,0,0,0.06)] border cursor-pointer",
                     "group-hover:-translate-y-[3px] group-hover:scale-[1.08] group-hover:shadow-[0_8px_20px_rgba(0,0,0,0.12)]",
                     isActive ? "bg-theme-accent-light text-theme-accent border-theme-accent shadow-[0_0_15px_rgba(88,101,242,0.4)]" : "bg-white text-theme-primary border-theme-border hover:border-theme-accent/30",
                     item.isLogout && "group-hover:!text-theme-absent group-hover:!border-theme-absent/30"
                   )}
                 >
-                  <item.icon className="w-[20px] h-[20px] sm:w-[22px] sm:h-[22px]" />
+                  <item.icon className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px]" />
                 </div>
                 
+                {/* Hover Label mapped outside/to the right of the button */}
                 <div 
                   className={clsx(
-                    "absolute top-[calc(100%+8px)] text-[12px] sm:text-[13px] font-medium whitespace-nowrap transition-all duration-200 pointer-events-none text-center tracking-wide",
-                    "opacity-0 -translate-y-1 group-hover:opacity-100 group-hover:translate-y-0",
-                    isActive ? "text-theme-accent font-bold" : "text-theme-text group-hover:text-theme-primary font-semibold",
+                    "absolute left-[calc(100%+12px)] top-1/2 px-2.5 py-1.5 rounded-[8px] bg-white/95 border border-theme-border/60 shadow-sm backdrop-blur-sm text-[12px] sm:text-[13px] font-medium whitespace-nowrap transition-all duration-200 pointer-events-none text-left tracking-wide",
+                    "opacity-0 -translate-x-2 -translate-y-1/2 group-hover:opacity-100 group-hover:translate-x-0 group-hover:-translate-y-[calc(50%+3px)]",
+                    isActive ? "text-theme-accent font-bold border-theme-accent/30" : "text-theme-text group-hover:text-theme-primary font-semibold",
                     item.isLogout && "group-hover:!text-theme-absent"
                   )}
                 >
