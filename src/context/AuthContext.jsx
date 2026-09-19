@@ -1,4 +1,4 @@
-﻿import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { subscribeToAuthChanges, loginUser, logoutUser, registerUser, changeUserPassword } from '../services/authService';
 
 const AuthContext = createContext();

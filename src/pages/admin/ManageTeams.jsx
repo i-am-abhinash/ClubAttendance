@@ -1,13 +1,12 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/common/Layout';
 import { fetchTeams, createTeam, deleteTeam } from '../../services/teamService';
-import { fetchMembers, updateMember } from '../../services/memberService';
+import { fetchMembers } from '../../services/memberService';
 import { Plus, Trash2, Users, ArrowRight } from 'lucide-react';
 
 const ManageTeams = () => {
   const [teams, setTeams] = useState([]);
-  const [members, setMembers] = useState([]);
   const [teamStats, setTeamStats] = useState({});
   const [newTeamName, setNewTeamName] = useState('');
   const [loading, setLoading] = useState(true);
@@ -31,13 +30,11 @@ const ManageTeams = () => {
         const leaders = teamMembers.filter(m => m.role === 'Team Leader');
         stats[t.id] = {
           memberCount: teamMembers.length,
-          leaders: leaders.map(l => l.name).join(', ') || 'None',
-          leaderId: leaders.length > 0 ? leaders[0].id : ''
+          leaderName: leaders.length > 0 ? leaders[0].name : 'Unassigned'
         };
       });
       
       setTeams(tData);
-      setMembers(mData);
       setTeamStats(stats);
     } catch (err) {
       console.error(err);
@@ -71,27 +68,6 @@ const ManageTeams = () => {
     }
   };
 
-  const handleAssignLeader = async (teamId, leaderId, e) => {
-    e.stopPropagation(); // Prevent opening team details
-    try {
-      const oldLeader = members.find(m => m.teamId === teamId && m.role === 'Team Leader');
-      if (oldLeader && oldLeader.id !== leaderId) {
-        await updateMember(oldLeader.id, { teamId: null });
-      }
-
-      if (leaderId) {
-        await updateMember(leaderId, { teamId: teamId });
-      }
-
-      loadData();
-    } catch (error) {
-      console.error(error);
-      alert("Failed to assign team leader.");
-    }
-  };
-
-  const availableLeaders = members.filter(m => m.role === 'Team Leader');
-
   return (
     <Layout title="Teams" description="Organize members and monitor team structure.">
       
@@ -106,14 +82,14 @@ const ManageTeams = () => {
       </div>
 
       {isAdding && (
-        <div className="card p-6 mb-8 border-theme-accent border-l-4">
+        <div className="card p-6 mb-8 border-theme-accent border-l-4 bg-theme-surface-elevated">
           <form onSubmit={handleCreate} className="flex flex-col sm:flex-row gap-4 items-end">
             <div className="flex-1 w-full">
               <label className="block text-sm font-medium text-theme-text mb-1">New Team Name</label>
               <input 
                 type="text" 
                 required
-                className="w-full border border-theme-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-theme-accent"
+                className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 px-3 text-sm text-theme-text focus:outline-none focus:border-theme-accent placeholder-theme-muted"
                 value={newTeamName}
                 onChange={e => setNewTeamName(e.target.value)}
                 placeholder="e.g. AI Research Group"
@@ -143,15 +119,15 @@ const ManageTeams = () => {
             <div 
               key={team.id} 
               onClick={() => navigate(`/admin/teams/${team.id}`)}
-              className="card p-6 flex flex-col hover:border-theme-accent/50 hover:shadow-md transition-all cursor-pointer group relative"
+              className="card p-6 flex flex-col hover:border-theme-accent/30 hover:shadow-[0_8px_30px_rgba(109,124,255,0.1)] transition-all cursor-pointer group relative bg-gradient-to-br from-theme-surface to-[#0B111D]"
             >
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-theme-bg flex items-center justify-center text-theme-primary group-hover:bg-theme-accent-light group-hover:text-theme-accent transition-colors">
+                  <div className="w-10 h-10 rounded-lg bg-theme-surface-elevated border border-theme-border flex items-center justify-center text-theme-accent group-hover:bg-theme-accent-light transition-colors">
                     <Users className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-theme-primary">{team.name}</h4>
+                    <h4 className="font-bold text-theme-primary text-lg">{team.name}</h4>
                     <span className="text-xs text-theme-text-secondary font-medium">
                       {teamStats[team.id]?.memberCount || 0} Members
                     </span>
@@ -160,30 +136,19 @@ const ManageTeams = () => {
                 <button 
                   onClick={(e) => handleDelete(team.id, e)} 
                   className="text-theme-muted hover:text-theme-absent p-1.5 rounded-lg hover:bg-theme-absent-bg transition-colors"
+                  title="Delete Team"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
               
-              <div className="mt-auto pt-4 border-t border-theme-border-subtle">
-                <div className="flex flex-col gap-1 mb-4">
-                  <label className="text-xs font-semibold text-theme-muted uppercase">Team Leader</label>
-                  <select
-                    className="w-full text-sm border border-theme-border rounded py-1 px-2 focus:outline-none focus:border-theme-accent cursor-pointer"
-                    value={teamStats[team.id]?.leaderId || ''}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => handleAssignLeader(team.id, e.target.value, e)}
-                  >
-                    <option value="">[ Select Team Leader ]</option>
-                    {availableLeaders.map(leader => (
-                      <option key={leader.id} value={leader.id}>
-                        {leader.name} {leader.teamId && leader.teamId !== team.id ? '(Reassign)' : ''}
-                      </option>
-                    ))}
-                  </select>
+              <div className="mt-auto pt-4 border-t border-theme-border flex items-end justify-between">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold text-theme-muted uppercase tracking-wider">Team Leader</span>
+                  <span className="text-sm font-medium text-theme-primary">{teamStats[team.id]?.leaderName}</span>
                 </div>
                 
-                <div className="flex items-center justify-end text-xs font-semibold text-theme-accent opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center text-xs font-semibold text-theme-accent opacity-0 group-hover:opacity-100 transition-opacity translate-x-[-10px] group-hover:translate-x-0 duration-300">
                   View Details <ArrowRight className="w-3.5 h-3.5 ml-1" />
                 </div>
               </div>

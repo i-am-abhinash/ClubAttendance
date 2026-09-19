@@ -1,23 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../../components/common/Layout';
-import { fetchMembers, createMember, deleteMember } from '../../services/memberService';
+import { fetchMembers, updateMember, deleteMember } from '../../services/memberService';
+import { registerUser } from '../../services/authService';
 import { fetchTeams } from '../../services/teamService';
 import { fetchAttendance } from '../../services/attendanceService';
-import { IndividualAnalytics } from '../../components/analytics/IndividualAnalytics';
 import { calculateAttendanceStats } from '../../utils/analyticsUtils';
-import { Plus, Users, Search, Trash2, X } from 'lucide-react';
+import { IndividualAnalytics } from '../../components/analytics/IndividualAnalytics';
+import { Users, Plus, Trash2, X, ShieldAlert } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import Dropdown from '../../components/common/Dropdown';
 
 const ManageMembers = () => {
+  const { user } = useAuth();
   const [members, setMembers] = useState([]);
   const [teams, setTeams] = useState([]);
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'Member' });
   const [isAdding, setIsAdding] = useState(false);
-  
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'Member', teamId: '' });
+
   const [selectedMember, setSelectedMember] = useState(null);
+  
+  // Edit State
+  const [editRole, setEditRole] = useState('');
+  const [editTeam, setEditTeam] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -26,9 +35,9 @@ const ManageMembers = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const mData = await fetchMembers();
-      const tData = await fetchTeams();
-      const rData = await fetchAttendance();
+      const [mData, tData, rData] = await Promise.all([
+        fetchMembers(), fetchTeams(), fetchAttendance()
+      ]);
       setMembers(mData);
       setTeams(tData);
       setRecords(rData);
@@ -41,19 +50,28 @@ const ManageMembers = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      await createMember(formData);
-      setFormData({ name: '', email: '', password: '', role: 'Member' });
+      const data = {
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        teamId: formData.teamId || null
+      };
+      
+      const { adminCreateUser } = await import('../../services/authService');
+      await adminCreateUser(formData.email, formData.password, data);
+      
       setIsAdding(false);
+      setFormData({ name: '', email: '', password: '', role: 'Member', teamId: '' });
       loadData();
     } catch (err) {
       console.error(err);
-      alert("Failed to create member. " + err.message);
+      alert(`Failed to create member: ${err.message}`);
     }
   };
 
   const handleDelete = async (id, e) => {
     e.stopPropagation();
-    if (!window.confirm("Are you sure you want to remove this member?")) return;
+    if (!window.confirm("Are you sure you want to permanently remove this member?")) return;
     try {
       await deleteMember(id);
       loadData();
@@ -63,56 +81,101 @@ const ManageMembers = () => {
     }
   };
 
+  const handleOpenMember = (member) => {
+    setSelectedMember(member);
+    setEditRole(member.role);
+    setEditTeam(member.teamId || '');
+  };
+
+  const handleSaveMember = async () => {
+    if (!selectedMember) return;
+    setIsSaving(true);
+    try {
+      const newRole = editRole;
+      let newTeamId = editTeam === '' ? null : editTeam;
+
+      // Check for uniqueness if promoting to Team Leader and assigning a team
+      if (newRole === 'Team Leader' && newTeamId) {
+        const existingLeader = members.find(m => m.teamId === newTeamId && m.role === 'Team Leader' && m.id !== selectedMember.id);
+        if (existingLeader) {
+          const confirmReplace = window.confirm(`This team already has a Team Leader (${existingLeader.name}). Replace the current Team Leader?`);
+          if (!confirmReplace) {
+            setIsSaving(false);
+            return;
+          }
+          // Downgrade old leader
+          await updateMember(existingLeader.id, { teamId: null });
+        }
+      }
+
+      await updateMember(selectedMember.id, {
+        role: newRole,
+        teamId: newTeamId
+      });
+      
+      setSelectedMember(null);
+      loadData();
+    } catch (error) {
+      console.error("Failed to update member", error);
+      alert("Failed to update member. Check your permissions.");
+    }
+    setIsSaving(false);
+  };
+
   const filteredMembers = members.filter(m => 
     m.name.toLowerCase().includes(search.toLowerCase()) || 
     m.email.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <Layout title="Members" description="Manage all club members globally.">
+    <Layout title="Member Directory" description="Manage roles, teams, and view individual analytics.">
       
-      {/* Top Controls */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div className="relative w-full sm:w-72">
-          <Search className="w-4 h-4 text-theme-muted absolute left-3 top-1/2 -translate-y-1/2" />
-          <input 
-            type="text" 
-            placeholder="Search members..." 
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full bg-white border border-theme-border rounded-lg py-2 pl-9 pr-4 text-sm focus:outline-none focus:border-theme-accent focus:ring-1 focus:ring-theme-accent shadow-soft"
-          />
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-lg font-bold text-theme-primary">All Members</h3>
+        <div className="flex items-center gap-4">
+          <div className="w-64 relative hidden sm:block">
+            <input 
+              type="text" 
+              placeholder="Search directory..." 
+              className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 px-4 text-sm text-theme-text focus:outline-none focus:border-theme-accent"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <button 
+            onClick={() => setIsAdding(!isAdding)}
+            className="btn-primary"
+          >
+            <Plus className="w-4 h-4" /> {isAdding ? 'Cancel' : 'Add Member'}
+          </button>
         </div>
-        <button 
-          onClick={() => setIsAdding(!isAdding)}
-          className="btn-primary"
-        >
-          <Plus className="w-4 h-4" /> {isAdding ? 'Cancel' : 'Add Member'}
-        </button>
       </div>
 
       {isAdding && (
-        <div className="card p-6 mb-6 border-theme-accent border-l-4">
-          <h4 className="font-semibold text-theme-primary mb-4">Add New Member</h4>
+        <div className="card p-6 mb-8 border-theme-accent border-l-4 bg-theme-surface-elevated">
           <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-theme-text mb-1">Full Name</label>
-              <input required type="text" className="w-full border border-theme-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-theme-accent" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+              <input required type="text" className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 px-3 text-sm text-theme-text focus:outline-none focus:border-theme-accent" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-theme-text mb-1">Email Address</label>
-              <input required type="email" className="w-full border border-theme-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-theme-accent" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+              <label className="block text-sm font-medium text-theme-text mb-1">Email</label>
+              <input required type="email" className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 px-3 text-sm text-theme-text focus:outline-none focus:border-theme-accent" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
             </div>
             <div>
               <label className="block text-sm font-medium text-theme-text mb-1">Temporary Password</label>
-              <input required type="password" minLength="6" className="w-full border border-theme-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-theme-accent" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+              <input required type="password" minLength={6} className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 px-3 text-sm text-theme-text focus:outline-none focus:border-theme-accent" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
             </div>
             <div>
               <label className="block text-sm font-medium text-theme-text mb-1">Role</label>
-              <select required className="w-full border border-theme-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-theme-accent" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})}>
-                <option value="Member">Member</option>
-                <option value="Team Leader">Team Leader</option>
-              </select>
+              <Dropdown 
+                options={[
+                  { label: 'Member', value: 'Member' },
+                  { label: 'Team Leader', value: 'Team Leader' }
+                ]}
+                value={formData.role}
+                onChange={(val) => setFormData({...formData, role: val})}
+              />
             </div>
             
             <div className="md:col-span-2 mt-4 flex gap-3">
@@ -156,25 +219,25 @@ const ManageMembers = () => {
                   return (
                     <tr 
                       key={member.id} 
-                      onClick={() => setSelectedMember(member)}
-                      className="cursor-pointer hover:bg-theme-accent/5 transition-colors"
+                      onClick={() => handleOpenMember(member)}
+                      className="cursor-pointer group"
                     >
                       <td>
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-theme-bg flex items-center justify-center text-theme-primary font-bold text-sm border border-theme-border-subtle">
+                          <div className="w-9 h-9 rounded-full bg-theme-surface-elevated flex items-center justify-center text-theme-cyan font-bold text-sm border border-theme-border group-hover:border-theme-accent/50 transition-colors">
                             {member.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div className="font-medium text-theme-primary">{member.name}</div>
+                            <div className="font-medium text-theme-primary group-hover:text-theme-accent transition-colors">{member.name}</div>
                             <div className="text-xs text-theme-text-secondary">{member.email}</div>
                           </div>
                         </div>
                       </td>
                       <td>
-                        <span className={`text-xs font-semibold px-2.5 py-1 rounded-md ${
-                          member.role === 'Admin' ? 'bg-theme-accent/10 text-theme-accent' : 
-                          member.role === 'Team Leader' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' : 
-                          'bg-theme-bg text-theme-text-secondary'
+                        <span className={`text-[10px] uppercase tracking-wide font-bold px-2 py-1 rounded-md ${
+                          member.role === 'Admin' ? 'bg-theme-accent/20 text-theme-accent' : 
+                          member.role === 'Team Leader' ? 'bg-theme-cyan/20 text-theme-cyan' : 
+                          'bg-theme-surface-higher text-theme-text-secondary'
                         }`}>
                           {member.role}
                         </span>
@@ -203,60 +266,114 @@ const ManageMembers = () => {
         )}
       </div>
 
-      {/* Member Analytics Modal */}
+      {/* Member Analytics & Management Modal */}
       {selectedMember && (
-        <div className="fixed inset-0 bg-theme-primary/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-theme-bg w-full max-w-4xl rounded-2xl shadow-float overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-6 border-b border-theme-border-subtle bg-white flex justify-between items-start shrink-0">
-              <div>
-                <h2 className="text-xl font-bold text-theme-primary">{selectedMember.name}</h2>
-                <p className="text-sm text-theme-text-secondary">
-                  {selectedMember.role} &bull; {teams.find(t => t.id === selectedMember.teamId)?.name || 'External Member'}
-                </p>
+        <div className="fixed inset-0 bg-[#070B12]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-theme-surface border border-theme-border w-full max-w-4xl rounded-2xl shadow-nav overflow-hidden flex flex-col max-h-[90vh]">
+            
+            <div className="p-6 border-b border-theme-border flex justify-between items-start shrink-0 bg-theme-surface-elevated">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-theme-surface flex items-center justify-center text-theme-cyan font-bold text-xl border-2 border-theme-border">
+                  {selectedMember.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-theme-primary">{selectedMember.name}</h2>
+                  <p className="text-sm text-theme-text-secondary">{selectedMember.email}</p>
+                </div>
               </div>
               <button 
                 onClick={() => setSelectedMember(null)}
-                className="p-2 bg-theme-bg rounded-full text-theme-text-secondary hover:text-theme-primary hover:bg-theme-border-subtle transition-colors"
+                className="p-2 bg-theme-surface rounded-full text-theme-text-secondary hover:text-theme-primary hover:bg-theme-border transition-colors border border-theme-border"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             
-            <div className="p-6 overflow-y-auto">
-              {(() => {
-                const memberRecords = records.filter(r => r.userId === selectedMember.id);
-                const stats = calculateAttendanceStats(memberRecords, [selectedMember]);
-                return (
-                  <>
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
-                      <div className="card p-4 text-center">
-                        <div className="text-[10px] font-bold text-theme-muted uppercase mb-1">Attendance</div>
-                        <div className="text-2xl font-bold text-theme-accent">{stats.percentage}%</div>
+            <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-8">
+              
+              {/* Management Section (Only Admin can manage, but they shouldn't change another Admin) */}
+              {selectedMember.role !== 'Admin' && (
+                <div className="p-5 border border-theme-border rounded-xl bg-theme-surface-elevated flex flex-col md:flex-row gap-6">
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-theme-muted uppercase tracking-wider mb-2">Role</label>
+                    <Dropdown 
+                      options={[
+                        { label: 'Member', value: 'Member' },
+                        { label: 'Team Leader', value: 'Team Leader' }
+                      ]}
+                      value={editRole}
+                      onChange={(val) => setEditRole(val)}
+                    />
+                  </div>
+                  
+                  <div className="flex-1">
+                    <label className="block text-xs font-bold text-theme-muted uppercase tracking-wider mb-2">Team Assignment</label>
+                    <Dropdown 
+                      options={[
+                        { label: '[ External / Unassigned ]', value: '' },
+                        ...teams.map(t => ({ label: t.name, value: t.id }))
+                      ]}
+                      value={editTeam}
+                      onChange={(val) => setEditTeam(val)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-end">
+                    <button 
+                      onClick={handleSaveMember} 
+                      disabled={isSaving || (editRole === selectedMember.role && editTeam === (selectedMember.teamId || ''))}
+                      className="btn-primary w-full md:w-auto h-[42px]"
+                    >
+                      {isSaving ? 'Saving...' : 'Update Member'}
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {selectedMember.role === 'Admin' && selectedMember.id !== user.uid && (
+                <div className="p-4 rounded-lg bg-theme-accent/10 border border-theme-accent/20 flex items-center gap-3 text-theme-accent text-sm font-medium">
+                  <ShieldAlert className="w-5 h-5" /> You cannot modify another Admin's role.
+                </div>
+              )}
+
+              {/* Analytics Section */}
+              <div>
+                <h3 className="text-sm font-bold text-theme-muted uppercase tracking-wider mb-4">Attendance Analytics</h3>
+                {(() => {
+                  const memberRecords = records.filter(r => r.userId === selectedMember.id);
+                  const stats = calculateAttendanceStats(memberRecords, [selectedMember]);
+                  return (
+                    <>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                        <div className="card p-4 text-center border-theme-border-subtle bg-theme-surface-elevated">
+                          <div className="text-[10px] font-bold text-theme-muted uppercase tracking-wider mb-1">Attendance</div>
+                          <div className="text-2xl font-bold text-theme-accent">{stats.percentage}%</div>
+                        </div>
+                        <div className="card p-4 text-center border-theme-border-subtle bg-theme-surface-elevated">
+                          <div className="text-[10px] font-bold text-theme-muted uppercase tracking-wider mb-1">Present</div>
+                          <div className="text-2xl font-bold text-theme-present">{stats.present}</div>
+                        </div>
+                        <div className="card p-4 text-center border-theme-border-subtle bg-theme-surface-elevated">
+                          <div className="text-[10px] font-bold text-theme-muted uppercase tracking-wider mb-1">Late</div>
+                          <div className="text-2xl font-bold text-theme-late">{stats.late}</div>
+                        </div>
+                        <div className="card p-4 text-center border-theme-border-subtle bg-theme-surface-elevated">
+                          <div className="text-[10px] font-bold text-theme-muted uppercase tracking-wider mb-1">Absent</div>
+                          <div className="text-2xl font-bold text-theme-absent">{stats.absent}</div>
+                        </div>
                       </div>
-                      <div className="card p-4 text-center">
-                        <div className="text-[10px] font-bold text-theme-muted uppercase mb-1">Present</div>
-                        <div className="text-2xl font-bold text-theme-present">{stats.present}</div>
-                      </div>
-                      <div className="card p-4 text-center">
-                        <div className="text-[10px] font-bold text-theme-muted uppercase mb-1">Late</div>
-                        <div className="text-2xl font-bold text-theme-late">{stats.late}</div>
-                      </div>
-                      <div className="card p-4 text-center">
-                        <div className="text-[10px] font-bold text-theme-muted uppercase mb-1">Absent</div>
-                        <div className="text-2xl font-bold text-theme-absent">{stats.absent}</div>
-                      </div>
-                    </div>
-                    
-                    {memberRecords.length > 0 ? (
-                      <IndividualAnalytics records={memberRecords} />
-                    ) : (
-                      <div className="text-center py-12 text-theme-text-secondary">
-                        No attendance history for this member.
-                      </div>
-                    )}
-                  </>
-                );
-              })()}
+                      
+                      {memberRecords.length > 0 ? (
+                        <IndividualAnalytics records={memberRecords} />
+                      ) : (
+                        <div className="text-center py-12 text-theme-text-secondary border border-dashed border-theme-border rounded-xl">
+                          No attendance history for this member.
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
             </div>
           </div>
         </div>

@@ -1,17 +1,38 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   body {
     @apply bg-theme-bg text-theme-text font-sans antialiased;
+    color-scheme: dark;
+  }
+  
+  select {
+    color-scheme: dark;
+  }
+  
+  option {
+    @apply bg-theme-surface text-theme-text;
   }
 }
 
 @layer components {
   /* Minimalist Premium Card */
   .card {
-    @apply bg-theme-surface rounded-[14px] border border-theme-border shadow-soft transition-all duration-200 hover:shadow-float relative overflow-hidden;
+    @apply bg-theme-surface rounded-[14px] border border-theme-border shadow-soft transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] relative overflow-hidden;
+  }
+  .card:hover {
+    @apply shadow-float border-theme-border-subtle;
+  }
+  
+  /* Clickable Cards & Elements */
+  .card.cursor-pointer:hover {
+    box-shadow: 0 12px 30px rgba(109, 124, 255, 0.15);
+    @apply -translate-y-[4px] scale-[1.02] border-theme-accent/40;
+  }
+  .card.cursor-pointer:active {
+    @apply scale-[0.98] translate-y-0;
   }
 
   /* Typography */
@@ -25,20 +46,42 @@
   /* Buttons */
   .btn-primary {
     @apply bg-theme-accent text-white font-medium rounded-lg px-4 py-2 
-           transition-all duration-200 hover:scale-[1.02] hover:shadow-md 
-           active:scale-95 disabled:opacity-50 disabled:pointer-events-none
-           flex items-center justify-center gap-2;
+           transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]
+           flex items-center justify-center gap-2 border border-theme-accent;
+  }
+  .btn-primary:hover {
+    background-color: #8190FF;
+    border-color: #8190FF;
+    box-shadow: 0 8px 25px rgba(109, 124, 255, 0.35);
+    @apply -translate-y-[2px] scale-[1.04];
+  }
+  .btn-primary:active {
+    @apply scale-95 translate-y-[1px];
+  }
+  .btn-primary:disabled {
+    @apply opacity-50 pointer-events-none;
   }
   
   .btn-secondary {
-    @apply bg-theme-surface text-theme-text font-medium rounded-lg px-4 py-2 
-           border border-theme-border hover:bg-theme-bg hover:text-theme-primary
-           transition-all duration-200 hover:scale-[1.02] active:scale-95
+    @apply bg-theme-surface-elevated text-theme-text font-medium rounded-lg px-4 py-2 
+           border border-theme-border
+           transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]
            flex items-center justify-center gap-2;
+  }
+  .btn-secondary:hover {
+    box-shadow: 0 8px 25px rgba(56, 189, 248, 0.15);
+    @apply bg-theme-surface-higher border-theme-cyan/50 text-theme-cyan -translate-y-[2px] scale-[1.04];
+  }
+  .btn-secondary:active {
+    @apply scale-95 translate-y-[1px];
   }
 
   .btn-icon {
-    @apply p-2 rounded-full text-theme-text-secondary hover:text-theme-primary hover:bg-theme-bg transition-colors;
+    @apply p-2 rounded-full text-theme-text-secondary transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] border border-transparent;
+  }
+  .btn-icon:hover {
+    box-shadow: 0 8px 20px rgba(109, 124, 255, 0.15);
+    @apply text-theme-primary bg-theme-surface-elevated border-theme-accent/30 -translate-y-[2px] scale-[1.08];
   }
 
   /* Modern Data Table */
@@ -47,11 +90,11 @@
   }
   
   .premium-table th {
-    @apply bg-theme-bg/50 text-[11px] font-bold text-theme-muted uppercase tracking-wider px-6 py-4 border-b border-theme-border;
+    @apply bg-theme-surface-elevated text-[11px] font-bold text-theme-muted uppercase tracking-wider px-6 py-4 border-b border-theme-border;
   }
   
   .premium-table td {
-    @apply px-6 py-4 border-b border-theme-border-subtle align-middle bg-theme-surface text-sm;
+    @apply px-6 py-4 border-b border-theme-border align-middle bg-theme-surface text-sm;
   }
   
   .premium-table tr:last-child td {
@@ -59,6 +102,38 @@
   }
   
   .premium-table tr {
-    @apply transition-colors hover:bg-theme-bg/30;
+    @apply transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)];
+  }
+  .premium-table tr:hover {
+    @apply bg-theme-surface-elevated;
+  }
+  
+  .premium-table tr.cursor-pointer {
+    @apply relative block w-full table-row; /* Ensure layout doesn't break */
+  }
+  .premium-table tr.cursor-pointer:hover {
+    box-shadow: 0 8px 25px rgba(109, 124, 255, 0.1);
+    @apply bg-theme-surface-elevated z-10 scale-[1.01];
+  }
+  .premium-table tr.cursor-pointer:hover td {
+    @apply border-transparent; /* Hide bottom borders while floating */
+  }
+  .premium-table tr.cursor-pointer:active {
+    @apply scale-[0.99];
+  }
+
+  /* Scrollbar for dark theme */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-theme-bg;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-theme-surface-higher rounded-full border-2 border-theme-bg;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-theme-border;
   }
 }

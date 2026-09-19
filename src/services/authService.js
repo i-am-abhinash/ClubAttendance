@@ -1,12 +1,14 @@
-﻿import { 
+import { 
   signInWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged,
   createUserWithEmailAndPassword,
   updatePassword,
   reauthenticateWithCredential,
-  EmailAuthProvider
+  EmailAuthProvider,
+  getAuth
 } from 'firebase/auth';
+import { initializeApp } from 'firebase/app';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { checkAdminExists, setAdminExists } from './configService';
@@ -23,9 +25,14 @@ export const loginUser = async (email, password) => {
       
       // Auto-repair club/status if Admin logs in and it doesn't exist
       if (userData.role === 'Admin') {
-        const exists = await checkAdminExists();
-        if (!exists) {
-          await setAdminExists().catch(e => console.error("Auto-repair failed", e));
+        try {
+          const exists = await checkAdminExists();
+          if (!exists) {
+            await setAdminExists().catch(e => console.error("Auto-repair failed", e));
+          }
+        } catch (statusError) {
+          // Ignore if we get permission-denied here, it just means the rule is strict.
+          // Don't let it crash the login process.
         }
       }
       
@@ -40,6 +47,38 @@ export const loginUser = async (email, password) => {
 
 export const registerUser = async (email, password) => {
   return createUserWithEmailAndPassword(auth, email, password);
+};
+
+// Admin uses this to create users WITHOUT logging themselves out
+export const adminCreateUser = async (email, password, userData) => {
+  // Use the same config as the main app
+  const firebaseConfig = {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  };
+  
+  // Create a secondary app instance
+  const secondaryApp = initializeApp(firebaseConfig, 'Secondary' + Date.now());
+  const secondaryAuth = getAuth(secondaryApp);
+  
+  try {
+    // Create the user on the secondary auth instance (so main auth is unaffected)
+    const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+    
+    // Write to Firestore using the MAIN db instance (because Admin is authenticated there)
+    await setDoc(doc(db, 'users', userCredential.user.uid), userData);
+    
+    // Sign out the secondary instance to clean up
+    await signOut(secondaryAuth);
+    
+    return userCredential;
+  } catch (error) {
+    throw error;
+  }
 };
 
 export const logoutUser = async () => {

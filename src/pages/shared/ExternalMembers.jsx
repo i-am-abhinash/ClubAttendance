@@ -1,14 +1,20 @@
 ﻿import React, { useState, useEffect } from 'react';
 import Layout from '../../components/common/Layout';
 import { fetchExternalMembers, updateMember } from '../../services/memberService';
+import { fetchTeams } from '../../services/teamService';
 import { useAuth } from '../../context/AuthContext';
-import { Users, Search, UserMinus, UserPlus } from 'lucide-react';
+import { Search, UserMinus, UserPlus, Users } from 'lucide-react';
+import Dropdown from '../../components/common/Dropdown';
 
 const ExternalMembers = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [members, setMembers] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  
+  // For Admin assigning
+  const [selectedTeams, setSelectedTeams] = useState({});
 
   useEffect(() => {
     loadData();
@@ -19,21 +25,31 @@ const ExternalMembers = () => {
     try {
       const data = await fetchExternalMembers();
       setMembers(data);
+      
+      if (isAdmin) {
+        const t = await fetchTeams();
+        setTeams(t);
+      }
     } catch (err) {
       console.error(err);
     }
     setLoading(false);
   };
 
-  const handleAddToTeam = async (memberId) => {
+  const handleAssignToTeam = async (memberId, teamIdToAssign) => {
+    if (!teamIdToAssign) return;
     try {
-      // Leader updates member teamId to their own teamId
-      await updateMember(memberId, { teamId: user.teamId });
-      // Remove from UI
+      await updateMember(memberId, { teamId: teamIdToAssign });
       setMembers(prev => prev.filter(m => m.id !== memberId));
+      
+      // Cleanup local state
+      const newSelected = {...selectedTeams};
+      delete newSelected[memberId];
+      setSelectedTeams(newSelected);
+      
     } catch (err) {
       console.error(err);
-      alert("Failed to assign member to your team.");
+      alert("Failed to assign member to team.");
     }
   };
 
@@ -42,8 +58,13 @@ const ExternalMembers = () => {
     m.email.toLowerCase().includes(search.toLowerCase())
   );
 
+  const teamDropdownOptions = [
+    { label: 'Select team...', value: '' },
+    ...teams.map(t => ({ label: t.name, value: t.id }))
+  ];
+
   return (
-    <Layout title="External Members" description="Recruit members who have not yet been assigned to a team.">
+    <Layout title="External Members" description={isAdmin ? "Manage and assign unassigned members." : "Recruit members who have not yet been assigned to a team."}>
       
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div className="relative w-full sm:w-72">
@@ -53,7 +74,7 @@ const ExternalMembers = () => {
             placeholder="Search external members..." 
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full bg-white border border-theme-border rounded-lg py-2 pl-9 pr-4 text-sm focus:outline-none focus:border-theme-accent focus:ring-1 focus:ring-theme-accent shadow-soft"
+            className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 pl-9 pr-4 text-sm focus:outline-none focus:border-theme-accent focus:ring-1 focus:ring-theme-accent shadow-soft"
           />
         </div>
       </div>
@@ -82,30 +103,50 @@ const ExternalMembers = () => {
               </thead>
               <tbody>
                 {filteredMembers.map(member => (
-                  <tr key={member.id}>
+                  <tr key={member.id} className="cursor-pointer group">
                     <td>
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-theme-bg flex items-center justify-center text-theme-primary font-bold text-sm border border-theme-border-subtle">
+                        <div className="w-9 h-9 rounded-full bg-theme-surface-elevated flex items-center justify-center text-theme-primary font-bold text-sm border border-theme-border shadow-inner">
                           {member.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <div className="font-medium text-theme-primary">{member.name}</div>
+                          <div className="font-medium text-theme-primary group-hover:text-theme-accent transition-colors">{member.name}</div>
                           <div className="text-xs text-theme-text-secondary">{member.email}</div>
                         </div>
                       </div>
                     </td>
                     <td>
-                      <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-theme-bg text-theme-text-secondary">
+                      <span className="text-[10px] uppercase font-bold tracking-wide px-2 py-1 rounded-md bg-theme-surface-higher text-theme-text-secondary">
                         {member.role}
                       </span>
                     </td>
                     <td className="text-right">
-                      <button 
-                        onClick={() => handleAddToTeam(member.id)}
-                        className="btn-primary py-1.5 text-xs inline-flex items-center gap-1.5"
-                      >
-                        <UserPlus className="w-3.5 h-3.5" /> Add to My Team
-                      </button>
+                      {isAdmin ? (
+                        <div className="flex items-center justify-end gap-2">
+                          <div className="w-48 text-left">
+                            <Dropdown 
+                              options={teamDropdownOptions}
+                              value={selectedTeams[member.id] || ''}
+                              onChange={(val) => setSelectedTeams({...selectedTeams, [member.id]: val})}
+                              icon={Users}
+                            />
+                          </div>
+                          <button 
+                            onClick={() => handleAssignToTeam(member.id, selectedTeams[member.id])}
+                            disabled={!selectedTeams[member.id]}
+                            className="btn-primary py-2 px-3 text-xs"
+                          >
+                            Assign
+                          </button>
+                        </div>
+                      ) : (
+                        <button 
+                          onClick={() => handleAssignToTeam(member.id, user.teamId)}
+                          className="btn-primary py-1.5 text-xs inline-flex items-center gap-1.5"
+                        >
+                          <UserPlus className="w-3.5 h-3.5" /> Add to My Team
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

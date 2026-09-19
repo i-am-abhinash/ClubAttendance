@@ -9,7 +9,6 @@ export const TeamAnalytics = ({ records, members }) => {
   
   // 1. Weekly Attendance (Mon-Sun grouped bar)
   const weeklyData = useMemo(() => {
-    // days: 0 = Sun, 1 = Mon ... 6 = Sat. We want Mon-Sun
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const map = [
       { name: 'Mon', Present: 0, Late: 0, Absent: 0 },
@@ -21,8 +20,6 @@ export const TeamAnalytics = ({ records, members }) => {
       { name: 'Sun', Present: 0, Late: 0, Absent: 0 },
     ];
     
-    // JS getDay(): 0 is Sunday, 1 is Monday.
-    // Our map: index 0 is Mon, 6 is Sun.
     const dayToIndex = (d) => d === 0 ? 6 : d - 1;
 
     records.forEach(r => {
@@ -79,7 +76,7 @@ export const TeamAnalytics = ({ records, members }) => {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border border-theme-border rounded-lg shadow-lg">
+        <div className="bg-theme-surface-higher p-3 border border-theme-border rounded-lg shadow-float">
           <p className="text-xs font-bold text-theme-muted mb-2">{label}</p>
           {payload.map((entry, index) => (
             <p key={`item-${index}`} className="text-sm font-medium" style={{ color: entry.color }}>
@@ -98,57 +95,57 @@ export const TeamAnalytics = ({ records, members }) => {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       
       {/* Trend */}
-      <div className="card p-6 lg:col-span-2">
+      <div className="card p-6 lg:col-span-2 bg-gradient-to-br from-theme-surface to-[#0B111D]">
         <h3 className="font-bold text-theme-primary mb-6">Team Attendance Trend</h3>
         <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={trendData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#5865F2" stopOpacity={0.2}/>
-                  <stop offset="95%" stopColor="#5865F2" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#38BDF8" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#38BDF8" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-              <XAxis dataKey="date" tick={{fontSize: 12, fill: '#94A3B8'}} axisLine={false} tickLine={false} dy={10} />
-              <YAxis tick={{fontSize: 12, fill: '#94A3B8'}} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1E2A3A" />
+              <XAxis dataKey="date" tick={{fontSize: 12, fill: '#64748B'}} axisLine={false} tickLine={false} dy={10} />
+              <YAxis tick={{fontSize: 12, fill: '#64748B'}} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="rate" name="Attendance" stroke="#5865F2" strokeWidth={3} fillOpacity={1} fill="url(#colorRate)" />
+              <Area type="monotone" dataKey="rate" name="Attendance" stroke="#38BDF8" strokeWidth={3} fillOpacity={1} fill="url(#colorRate)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       {/* Weekly Breakdown */}
-      <div className="card p-6">
+      <div className="card p-6 bg-gradient-to-br from-theme-surface to-[#0B111D]">
         <h3 className="font-bold text-theme-primary mb-6">Weekday Attendance Pattern</h3>
         <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={weeklyData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-              <XAxis dataKey="name" tick={{fontSize: 12, fill: '#94A3B8'}} axisLine={false} tickLine={false} dy={10} />
-              <YAxis tick={{fontSize: 12, fill: '#94A3B8'}} axisLine={false} tickLine={false} />
-              <Tooltip cursor={{fill: '#F7F8FA'}} content={<CustomTooltip />} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1E2A3A" />
+              <XAxis dataKey="name" tick={{fontSize: 12, fill: '#64748B'}} axisLine={false} tickLine={false} dy={10} />
+              <YAxis tick={{fontSize: 12, fill: '#64748B'}} axisLine={false} tickLine={false} />
+              <Tooltip cursor={{fill: '#111B2A'}} content={<CustomTooltip />} />
               <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
-              <Bar dataKey="Present" fill="#16866A" radius={[2, 2, 0, 0]} barSize={12} stackId="a" />
-              <Bar dataKey="Late" fill="#C98A24" radius={[0, 0, 0, 0]} barSize={12} stackId="a" />
-              <Bar dataKey="Absent" fill="#D9536F" radius={[0, 0, 0, 0]} barSize={12} stackId="a" />
+              <Bar dataKey="Present" fill="#34D399" radius={[2, 2, 0, 0]} barSize={12} stackId="a" />
+              <Bar dataKey="Late" fill="#FBBF24" radius={[0, 0, 0, 0]} barSize={12} stackId="a" />
+              <Bar dataKey="Absent" fill="#FB7185" radius={[0, 0, 0, 0]} barSize={12} stackId="a" />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       {/* Member Comparison */}
-      <div className="card p-6">
+      <div className="card p-6 bg-gradient-to-br from-theme-surface to-[#0B111D]">
         <h3 className="font-bold text-theme-primary mb-6">Member Comparison</h3>
         <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={memberData} layout="vertical" margin={{ top: 0, right: 30, left: 10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E5E7EB" />
-              <XAxis type="number" domain={[0, 100]} tick={{fontSize: 12, fill: '#94A3B8'}} axisLine={false} tickLine={false} />
-              <YAxis dataKey="name" type="category" tick={{fontSize: 11, fill: '#172033', fontWeight: 500}} axisLine={false} tickLine={false} width={80} />
-              <Tooltip cursor={{fill: '#F7F8FA'}} content={<CustomTooltip />} />
-              <Bar dataKey="rate" name="Attendance" fill="#5865F2" radius={[0, 4, 4, 0]} barSize={16} />
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#1E2A3A" />
+              <XAxis type="number" domain={[0, 100]} tick={{fontSize: 12, fill: '#64748B'}} axisLine={false} tickLine={false} />
+              <YAxis dataKey="name" type="category" tick={{fontSize: 11, fill: '#94A3B8', fontWeight: 500}} axisLine={false} tickLine={false} width={80} />
+              <Tooltip cursor={{fill: '#111B2A'}} content={<CustomTooltip />} />
+              <Bar dataKey="rate" name="Attendance" fill="#6D7CFF" radius={[0, 4, 4, 0]} barSize={16} />
             </BarChart>
           </ResponsiveContainer>
         </div>

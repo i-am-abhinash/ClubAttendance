@@ -1,4 +1,4 @@
-﻿import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
 export const checkAdminExists = async () => {
@@ -6,7 +6,9 @@ export const checkAdminExists = async () => {
     const statusDoc = await getDoc(doc(db, 'club', 'status'));
     return statusDoc.exists() && statusDoc.data().adminExists === true;
   } catch (error) {
-    console.error("Error checking admin status:", error);
+    if (error.code !== 'permission-denied') {
+      console.error("Error checking admin status:", error);
+    }
     throw error;
   }
 };

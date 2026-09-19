@@ -1,7 +1,8 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import Layout from '../../components/common/Layout';
 import { useAuth } from '../../context/AuthContext';
 import { Settings as SettingsIcon, Shield, Key } from 'lucide-react';
+import SeedDatabase from './SeedDatabase';
 
 const Settings = () => {
   const { user, changePassword } = useAuth();
@@ -67,7 +68,7 @@ const Settings = () => {
 
         {/* Security Settings */}
         <div className="card overflow-hidden">
-          <div className="border-b border-theme-border-subtle p-6 bg-white/50 flex items-center gap-3">
+          <div className="border-b border-theme-border-subtle p-6 bg-theme-surface/50 flex items-center gap-3">
             <Shield className="w-5 h-5 text-theme-accent" />
             <h3 className="text-lg font-bold text-theme-primary">Account Security</h3>
           </div>
@@ -134,6 +135,9 @@ const Settings = () => {
             </form>
           </div>
         </div>
+
+        {/* Admin Tools */}
+        {user?.role === 'Admin' && <SeedDatabase />}
 
       </div>
     </Layout>

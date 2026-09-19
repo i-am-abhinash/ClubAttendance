@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import { useAuth } from '../context/AuthContext';
@@ -10,16 +10,15 @@ import Register from '../pages/auth/Register';
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import ManageTeams from '../pages/admin/ManageTeams';
 import ManageMembers from '../pages/admin/ManageMembers';
-import ExternalMembersAdmin from '../pages/admin/ExternalMembers';
 
 import LeaderDashboard from '../pages/leader/LeaderDashboard';
-import ExternalMembersLeader from '../pages/leader/ExternalMembers';
 
 import MemberDashboard from '../pages/member/MemberDashboard';
 import MyAttendance from '../pages/member/MyAttendance';
 
 import Settings from '../pages/settings/Settings';
 import TeamDetails from '../pages/shared/TeamDetails';
+import ExternalMembers from '../pages/shared/ExternalMembers';
 
 const AppRoutes = () => {
   const { user } = useAuth();
@@ -45,12 +44,12 @@ const AppRoutes = () => {
       <Route path="/admin/teams" element={<ProtectedRoute allowedRoles={['Admin']}><ManageTeams /></ProtectedRoute>} />
       <Route path="/admin/teams/:teamId" element={<ProtectedRoute allowedRoles={['Admin']}><TeamDetails /></ProtectedRoute>} />
       <Route path="/admin/members" element={<ProtectedRoute allowedRoles={['Admin']}><ManageMembers /></ProtectedRoute>} />
-      <Route path="/admin/external-members" element={<ProtectedRoute allowedRoles={['Admin']}><ExternalMembersAdmin /></ProtectedRoute>} />
+      <Route path="/admin/external-members" element={<ProtectedRoute allowedRoles={['Admin']}><ExternalMembers /></ProtectedRoute>} />
 
       {/* Leader Routes */}
       <Route path="/leader" element={<ProtectedRoute allowedRoles={['Team Leader']}><LeaderDashboard /></ProtectedRoute>} />
       <Route path="/leader/team" element={<ProtectedRoute allowedRoles={['Team Leader']}><TeamDetails /></ProtectedRoute>} />
-      <Route path="/leader/external-members" element={<ProtectedRoute allowedRoles={['Team Leader']}><ExternalMembersLeader /></ProtectedRoute>} />
+      <Route path="/leader/external-members" element={<ProtectedRoute allowedRoles={['Team Leader']}><ExternalMembers /></ProtectedRoute>} />
 
       {/* Member Routes */}
       <Route path="/member" element={<ProtectedRoute allowedRoles={['Member']}><MemberDashboard /></ProtectedRoute>} />
