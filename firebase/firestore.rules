@@ -71,5 +71,200 @@ service cloud.firestore {
       // ONLY Admin can create or update attendance.
       allow create, update, delete: if isAdmin();
     }
+  
+    // =========================================================================
+    // LEARNING CORE (Phase 1)
+    // =========================================================================
+
+    match /courses/{courseId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /modules/{moduleId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /lessons/{lessonId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /resources/{resourceId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Progress: Members write their own; Leaders read their team's; Admins read all
+    match /progress/{progressId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.memberId ||
+        isAdmin() ||
+        (isLeader() && userTeamId() == get(/databases/$(database)/documents/users/$(resource.data.memberId)).data.teamId)
+      );
+      // Members can only write their own progress (not others')
+      allow write: if isAuthenticated() && (
+        request.auth.uid == request.resource.data.memberId ||
+        isAdmin()
+      );
+    }
+
+    // =========================================================================
+    // ASSIGNMENTS & QUIZZES (Phase 2)
+    // =========================================================================
+
+    match /assignments/{assignmentId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /quizzes/{quizId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /assignment_submissions/{submissionId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.memberId ||
+        isAdmin() ||
+        (isLeader() && userTeamId() == resource.data.teamId)
+      );
+      // Members write their own; no peer review (V1 boundary)
+      allow write: if isAuthenticated() && (
+        request.auth.uid == request.resource.data.memberId ||
+        isAdmin()
+      );
+    }
+    match /quiz_attempts/{attemptId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.memberId ||
+        isAdmin() ||
+        (isLeader() && userTeamId() == get(/databases/$(database)/documents/users/$(resource.data.memberId)).data.teamId)
+      );
+      allow write: if isAuthenticated() && (
+        request.auth.uid == request.resource.data.memberId ||
+        isAdmin()
+      );
+    }
+
+    // =========================================================================
+    // TEAM OBJECTIVES, TASKS, & PROJECTS (Phase 3)
+    // =========================================================================
+
+    match /objectives/{objectiveId} {
+      // Members can read but NOT write objectives (only Leaders/Admins define objectives)
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == request.resource.data.teamId));
+    }
+    match /constraints/{constraintId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == request.resource.data.teamId));
+    }
+    match /tasks/{taskId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == request.resource.data.teamId));
+    }
+    match /task_assignments/{assignmentId} {
+      allow read: if isAuthenticated();
+      // Members can only update their OWN task assignment (e.g. marking COMPLETED)
+      allow write: if isAuthenticated() && (
+        isAdmin() || 
+        (isLeader() && userTeamId() == request.resource.data.teamId) ||
+        request.auth.uid == resource.data.memberId
+      );
+    }
+    match /projects/{projectId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == request.resource.data.teamId));
+    }
+    match /project_milestones/{milestoneId} {
+      allow read: if isAuthenticated();
+      // Tightened: only Leaders and Admins manage milestones
+      allow write: if isAuthenticated() && (isAdmin() || isLeader());
+    }
+
+    // =========================================================================
+    // PROJECT SUBMISSIONS & EVALUATION (Phase 4)
+    // =========================================================================
+
+    match /project_submissions/{subId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() || 
+        (isLeader() && userTeamId() == resource.data.teamId) ||
+        request.auth.uid == resource.data.memberId
+      );
+      // Members write their own. Leaders can update status (e.g. CHANGES_REQUESTED).
+      allow write: if isAuthenticated() && (
+        isAdmin() || 
+        (isLeader() && userTeamId() == request.resource.data.teamId) ||
+        request.auth.uid == request.resource.data.memberId
+      );
+    }
+
+    match /rubrics/{rubricId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin(); // Only Admins create/version rubrics
+    }
+
+    match /evaluations/{evalId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() ||
+        (isLeader() && userTeamId() == get(/databases/$(database)/documents/project_submissions/$(resource.data.submissionId)).data.teamId) ||
+        request.auth.uid == get(/databases/$(database)/documents/project_submissions/$(resource.data.submissionId)).data.memberId
+      );
+      // Only Admins and Team Leaders may create evaluations (no peer review - V1 boundary)
+      allow write: if isAuthenticated() && (isAdmin() || isLeader());
+      // Members CANNOT alter evaluator scores
+      allow update: if isAdmin() || (isLeader() && userTeamId() == get(/databases/$(database)/documents/project_submissions/$(resource.data.submissionId)).data.teamId);
+    }
+
+    // =========================================================================
+    // GROWTH & SKILLS (Phase 5) - FR-GROW-03: Never manually editable by members
+    // =========================================================================
+
+    match /growth/{snapshotId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() || 
+        (isLeader() && userTeamId() == resource.data.teamId) ||
+        request.auth.uid == resource.data.memberId
+      );
+      // FR-GROW-03: Growth is NEVER manually editable by members/leaders
+      allow write: if isAdmin();
+    }
+
+    match /skills/{skillId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() || 
+        isLeader() ||
+        request.auth.uid == resource.data.memberId
+      );
+      // Leaders can grant skills as evidence-based acknowledgment; Admin always can
+      allow write: if isAuthenticated() && (isAdmin() || isLeader());
+    }
+
+    // =========================================================================
+    // NOTIFICATIONS & AUDIT (Phase 6)
+    // =========================================================================
+
+    match /notifications/{notifId} {
+      allow read, update: if isAuthenticated() && (
+        request.auth.uid == resource.data.recipientId ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated();
+      allow delete: if false; // Soft delete only (mark readAt)
+    }
+
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      // Append-only - no updates or deletes by ANYONE (NFR-OBS-01)
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+
+    // =========================================================================
+    
+    // =========================================================================
+    // DEFAULT DENY (Catch-all - rejects any unmatched collection)
+    // =========================================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }
