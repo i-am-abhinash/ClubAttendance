@@ -1,11 +1,55 @@
-import React from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import RadialNavigation from './RadialNavigation';
-import { Search, Bell } from 'lucide-react';
+import { Search, Bell, Users, Briefcase, X, Fingerprint } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { fetchMembers } from '../../services/memberService';
+import { fetchTeams } from '../../services/teamService';
 
 const Layout = ({ children, title, description }) => {
   const { user } = useAuth();
   
+  const [searchQuery, setSearchQuery] = useState('');
+  const [allData, setAllData] = useState({ members: [], teams: [] });
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchRef = useRef(null);
+
+  useEffect(() => {
+    if (user) {
+      Promise.all([fetchMembers(), fetchTeams()]).then(([m, t]) => {
+        setAllData({ members: m, teams: t });
+      }).catch(console.error);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setIsSearchFocused(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return { members: [], teams: [] };
+    const q = searchQuery.toLowerCase();
+    
+    const filteredMembers = allData.members.filter(m => 
+      (m.name?.toLowerCase().includes(q)) || 
+      (m.regdNo?.toLowerCase().includes(q)) ||
+      (m.branch?.toLowerCase().includes(q))
+    ).slice(0, 6);
+
+    const filteredTeams = allData.teams.filter(t => 
+      t.name?.toLowerCase().includes(q)
+    ).slice(0, 3);
+
+    return { members: filteredMembers, teams: filteredTeams };
+  }, [searchQuery, allData]);
+
+  const [selectedMember, setSelectedMember] = useState(null);
+
   const today = new Date().toLocaleDateString('en-US', { 
     weekday: 'long', 
     month: 'short', 
@@ -17,6 +61,12 @@ const Layout = ({ children, title, description }) => {
     if (hour < 12) return 'Good Morning';
     if (hour < 18) return 'Good Afternoon';
     return 'Good Evening';
+  };
+
+  const getTeamName = (teamId) => {
+    if (!teamId) return 'External Member';
+    const team = allData.teams.find(t => t.id === teamId);
+    return team ? team.name : 'Unknown Team';
   };
 
   return (
@@ -59,13 +109,89 @@ const Layout = ({ children, title, description }) => {
         
         <div className="flex items-center gap-5 shrink-0">
           {/* Search */}
-          <div className="hidden md:flex items-center relative w-64">
-            <Search className="w-4 h-4 text-theme-muted absolute left-3 top-1/2 -translate-y-1/2" />
-            <input 
-              type="text" 
-              placeholder="Search..." 
-              className="w-full bg-theme-surface-elevated border border-theme-border rounded-full py-2 pl-9 pr-4 text-[13px] text-theme-text focus:outline-none focus:border-theme-accent focus:ring-1 focus:ring-theme-accent transition-all placeholder-theme-muted"
-            />
+          <div ref={searchRef} className="hidden md:block relative w-64 z-50">
+            <div className="relative">
+              <Search className="w-4 h-4 text-theme-muted absolute left-3 top-1/2 -translate-y-1/2" />
+              <input 
+                type="text" 
+                placeholder="Search members or teams..." 
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                className="w-full bg-theme-surface-elevated border border-theme-border rounded-full py-2 pl-9 pr-8 text-[13px] text-theme-text focus:outline-none focus:border-theme-accent focus:ring-1 focus:ring-theme-accent transition-all placeholder-theme-muted"
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-theme-muted hover:text-theme-primary"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Search Results Dropdown */}
+            {isSearchFocused && searchQuery.trim() && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-theme-surface-higher border border-theme-border-subtle rounded-xl shadow-glow overflow-hidden max-h-[400px] overflow-y-auto z-50 animate-in fade-in zoom-in-95 duration-200">
+                {searchResults.members.length === 0 && searchResults.teams.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-theme-text-secondary">
+                    No results found for "{searchQuery}"
+                  </div>
+                ) : (
+                  <div className="py-2">
+                    {/* Teams Section */}
+                    {searchResults.teams.length > 0 && (
+                      <div className="mb-2">
+                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-theme-muted flex items-center gap-1">
+                          <Briefcase className="w-3 h-3" /> Teams
+                        </div>
+                        {searchResults.teams.map(team => (
+                          <div key={team.id} className="px-3 py-2 hover:bg-theme-bg cursor-pointer transition-colors flex items-center justify-between">
+                            <span className="text-sm font-semibold text-theme-primary">{team.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Members Section */}
+                    {searchResults.members.length > 0 && (
+                      <div>
+                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-theme-muted flex items-center gap-1">
+                          <Users className="w-3 h-3" /> Members
+                        </div>
+                        {searchResults.members.map(member => (
+                          <div 
+                            key={member.id} 
+                            onClick={() => {
+                              setSelectedMember(member);
+                              setIsSearchFocused(false);
+                              setSearchQuery('');
+                            }}
+                            className="px-3 py-2 hover:bg-theme-bg cursor-pointer transition-colors border-b border-theme-border-subtle/30 last:border-0"
+                          >
+                            <div className="flex justify-between items-start">
+                              <span className="text-sm font-semibold text-theme-primary">{member.name}</span>
+                              {member.role !== 'Member' && (
+                                <span className="text-[9px] uppercase tracking-wide bg-theme-accent/10 text-theme-accent px-1.5 py-0.5 rounded">
+                                  {member.role}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1 text-xs text-theme-text-secondary">
+                              <span className="flex items-center gap-1">
+                                <Fingerprint className="w-3 h-3" /> {member.regdNo || 'No RegdNo'}
+                              </span>
+                              <span className="w-1 h-1 rounded-full bg-theme-border"></span>
+                              <span className="truncate">{getTeamName(member.teamId)}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           
           <div className="hidden sm:block text-[13px] font-medium text-theme-text-secondary">
@@ -105,6 +231,81 @@ const Layout = ({ children, title, description }) => {
           {children}
         </main>
       </div>
+
+      {/* Quick Profile Modal */}
+      {selectedMember && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0A101A]/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-theme-surface border border-theme-border rounded-2xl w-full max-w-md shadow-[0_0_40px_rgba(109,124,255,0.15)] overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header / Cover */}
+            <div className="h-24 bg-gradient-to-r from-theme-accent/20 to-theme-cyan/20 relative">
+              <button 
+                onClick={() => setSelectedMember(null)}
+                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-theme-bg/50 text-white hover:bg-theme-absent transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="px-6 pb-6 relative">
+              {/* Avatar */}
+              <div className="w-20 h-20 rounded-2xl bg-theme-surface-higher border-[3px] border-theme-surface flex items-center justify-center text-3xl font-bold text-theme-cyan shadow-lg absolute -top-10 left-6">
+                {selectedMember.name?.charAt(0).toUpperCase()}
+              </div>
+
+              <div className="pt-12">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-xl font-bold text-theme-primary">{selectedMember.name}</h2>
+                    <p className="text-theme-text-secondary text-sm flex items-center gap-2 mt-1">
+                      <Fingerprint className="w-3.5 h-3.5" /> {selectedMember.regdNo || 'No RegdNo'}
+                    </p>
+                  </div>
+                  <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md ${
+                    selectedMember.role === 'Admin' ? 'bg-theme-present/20 text-theme-present' :
+                    selectedMember.role === 'Team Leader' ? 'bg-theme-accent/20 text-theme-accent' :
+                    'bg-theme-surface-higher text-theme-muted border border-theme-border'
+                  }`}>
+                    {selectedMember.role}
+                  </span>
+                </div>
+
+                <div className="mt-6 space-y-4">
+                  <div className="bg-theme-bg/50 rounded-xl p-4 border border-theme-border-subtle">
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-theme-muted mb-1">Team Assignment</div>
+                    <div className="text-sm font-semibold text-theme-primary flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-theme-cyan" /> {getTeamName(selectedMember.teamId)}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-theme-bg/50 rounded-xl p-4 border border-theme-border-subtle">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-theme-muted mb-1">Branch</div>
+                      <div className="text-sm font-semibold text-theme-primary truncate">
+                        {selectedMember.branch || 'N/A'}
+                      </div>
+                    </div>
+                    <div className="bg-theme-bg/50 rounded-xl p-4 border border-theme-border-subtle">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-theme-muted mb-1">Status</div>
+                      <div className="text-sm font-semibold text-theme-primary">
+                        Active
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {selectedMember.email && (
+                    <div className="bg-theme-bg/50 rounded-xl p-4 border border-theme-border-subtle">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-theme-muted mb-1">Internal Email</div>
+                      <div className="text-sm font-mono text-theme-text-secondary truncate">
+                        {selectedMember.email}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
