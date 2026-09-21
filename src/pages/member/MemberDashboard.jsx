@@ -35,9 +35,10 @@ const MemberDashboard = () => {
       setLoading(true);
       try {
         if (user.teamId) {
-          const teams = await fetchTeams();
-          const t = teams.find(t => t.id === user.teamId);
-          if (t) setTeamName(t.name);
+          const { doc, getDoc } = await import('firebase/firestore');
+          const { db } = await import('../../services/firebase');
+          const teamDoc = await getDoc(doc(db, 'teams', user.teamId));
+          if (teamDoc.exists()) setTeamName(teamDoc.data().name);
         }
 
         const rawRecords = await fetchAttendance(null, user.uid);

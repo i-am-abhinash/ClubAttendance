@@ -14,7 +14,7 @@ const Layout = ({ children, title, description }) => {
   const searchRef = useRef(null);
 
   useEffect(() => {
-    if (user) {
+    if (user?.role === 'Admin') {
       Promise.all([fetchMembers(), fetchTeams()]).then(([m, t]) => {
         setAllData({ members: m, teams: t });
       }).catch(console.error);
@@ -109,90 +109,92 @@ const Layout = ({ children, title, description }) => {
         
         <div className="flex items-center gap-5 shrink-0">
           {/* Search */}
-          <div ref={searchRef} className="hidden md:block relative w-64 z-50">
-            <div className="relative">
-              <Search className="w-4 h-4 text-theme-muted absolute left-3 top-1/2 -translate-y-1/2" />
-              <input 
-                type="text" 
-                placeholder="Search members or teams..." 
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                onFocus={() => setIsSearchFocused(true)}
-                className="w-full bg-theme-surface-elevated border border-theme-border rounded-full py-2 pl-9 pr-8 text-[13px] text-theme-text focus:outline-none focus:border-theme-accent focus:ring-1 focus:ring-theme-accent transition-all placeholder-theme-muted"
-              />
-              {searchQuery && (
-                <button 
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-theme-muted hover:text-theme-primary"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Search Results Dropdown */}
-            {isSearchFocused && searchQuery.trim() && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-theme-surface-higher border border-theme-border-subtle rounded-xl shadow-glow overflow-hidden max-h-[400px] overflow-y-auto z-50 animate-in fade-in zoom-in-95 duration-200">
-                {searchResults.members.length === 0 && searchResults.teams.length === 0 ? (
-                  <div className="p-4 text-center text-sm text-theme-text-secondary">
-                    No results found for "{searchQuery}"
-                  </div>
-                ) : (
-                  <div className="py-2">
-                    {/* Teams Section */}
-                    {searchResults.teams.length > 0 && (
-                      <div className="mb-2">
-                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-theme-muted flex items-center gap-1">
-                          <Briefcase className="w-3 h-3" /> Teams
-                        </div>
-                        {searchResults.teams.map(team => (
-                          <div key={team.id} className="px-3 py-2 hover:bg-theme-bg cursor-pointer transition-colors flex items-center justify-between">
-                            <span className="text-sm font-semibold text-theme-primary">{team.name}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Members Section */}
-                    {searchResults.members.length > 0 && (
-                      <div>
-                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-theme-muted flex items-center gap-1">
-                          <Users className="w-3 h-3" /> Members
-                        </div>
-                        {searchResults.members.map(member => (
-                          <div 
-                            key={member.id} 
-                            onClick={() => {
-                              setSelectedMember(member);
-                              setIsSearchFocused(false);
-                              setSearchQuery('');
-                            }}
-                            className="px-3 py-2 hover:bg-theme-bg cursor-pointer transition-colors border-b border-theme-border-subtle/30 last:border-0"
-                          >
-                            <div className="flex justify-between items-start">
-                              <span className="text-sm font-semibold text-theme-primary">{member.name}</span>
-                              {member.role !== 'Member' && (
-                                <span className="text-[9px] uppercase tracking-wide bg-theme-accent/10 text-theme-accent px-1.5 py-0.5 rounded">
-                                  {member.role}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 mt-1 text-xs text-theme-text-secondary">
-                              <span className="flex items-center gap-1">
-                                <Fingerprint className="w-3 h-3" /> {member.regdNo || 'No RegdNo'}
-                              </span>
-                              <span className="w-1 h-1 rounded-full bg-theme-border"></span>
-                              <span className="truncate">{getTeamName(member.teamId)}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+          {user?.role === 'Admin' && (
+            <div ref={searchRef} className="hidden md:block relative w-64 z-50">
+              <div className="relative">
+                <Search className="w-4 h-4 text-theme-muted absolute left-3 top-1/2 -translate-y-1/2" />
+                <input 
+                  type="text" 
+                  placeholder="Search members or teams..." 
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  className="w-full bg-theme-surface-elevated border border-theme-border rounded-full py-2 pl-9 pr-8 text-[13px] text-theme-text focus:outline-none focus:border-theme-accent focus:ring-1 focus:ring-theme-accent transition-all placeholder-theme-muted"
+                />
+                {searchQuery && (
+                  <button 
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-theme-muted hover:text-theme-primary"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 )}
               </div>
-            )}
-          </div>
+
+              {/* Search Results Dropdown */}
+              {isSearchFocused && searchQuery.trim() && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-theme-surface-higher border border-theme-border-subtle rounded-xl shadow-glow overflow-hidden max-h-[400px] overflow-y-auto z-50 animate-in fade-in zoom-in-95 duration-200">
+                  {searchResults.members.length === 0 && searchResults.teams.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-theme-text-secondary">
+                      No results found for "{searchQuery}"
+                    </div>
+                  ) : (
+                    <div className="py-2">
+                      {/* Teams Section */}
+                      {searchResults.teams.length > 0 && (
+                        <div className="mb-2">
+                          <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-theme-muted flex items-center gap-1">
+                            <Briefcase className="w-3 h-3" /> Teams
+                          </div>
+                          {searchResults.teams.map(team => (
+                            <div key={team.id} className="px-3 py-2 hover:bg-theme-bg cursor-pointer transition-colors flex items-center justify-between">
+                              <span className="text-sm font-semibold text-theme-primary">{team.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Members Section */}
+                      {searchResults.members.length > 0 && (
+                        <div>
+                          <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-theme-muted flex items-center gap-1">
+                            <Users className="w-3 h-3" /> Members
+                          </div>
+                          {searchResults.members.map(member => (
+                            <div 
+                              key={member.id} 
+                              onClick={() => {
+                                setSelectedMember(member);
+                                setIsSearchFocused(false);
+                                setSearchQuery('');
+                              }}
+                              className="px-3 py-2 hover:bg-theme-bg cursor-pointer transition-colors border-b border-theme-border-subtle/30 last:border-0"
+                            >
+                              <div className="flex justify-between items-start">
+                                <span className="text-sm font-semibold text-theme-primary">{member.name}</span>
+                                {member.role !== 'Member' && (
+                                  <span className="text-[9px] uppercase tracking-wide bg-theme-accent/10 text-theme-accent px-1.5 py-0.5 rounded">
+                                    {member.role}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 mt-1 text-xs text-theme-text-secondary">
+                                <span className="flex items-center gap-1">
+                                  <Fingerprint className="w-3 h-3" /> {member.regdNo || 'No RegdNo'}
+                                </span>
+                                <span className="w-1 h-1 rounded-full bg-theme-border"></span>
+                                <span className="truncate">{getTeamName(member.teamId)}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           
           <div className="hidden sm:block text-[13px] font-medium text-theme-text-secondary">
             {today}

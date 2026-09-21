@@ -1,30 +1,14 @@
-import fs from 'fs';
+﻿import fs from 'fs';
 import path from 'path';
 import xlsx from 'xlsx';
 import dotenv from 'dotenv';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
-import { getFirestore, collection, getDocs, setDoc, doc, addDoc } from 'firebase/firestore';
+import admin from 'firebase-admin';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables from .env in the root directory
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
-
-const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY,
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.VITE_FIREBASE_APP_ID,
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
 
 const TEAM_MAP = {
   'AI': 'AI Team',
@@ -33,36 +17,28 @@ const TEAM_MAP = {
   'MK': 'Marketing'
 };
 
-import readline from 'readline';
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
-
-const question = (query) => new Promise((resolve) => rl.question(query, resolve));
-
 const runImport = async () => {
-  let adminEmail = process.argv[2];
-  let adminPassword = process.argv[3];
-  const excelFilePath = process.argv[4] || 'teams allocation.xlsx';
+  const serviceAccountPath = process.argv[2] || process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  const excelFilePath = process.argv[3] || 'teams allocation.xlsx';
 
-  if (!adminEmail) {
-    adminEmail = await question('Enter Admin Email: ');
-  }
-  if (!adminPassword) {
-    adminPassword = await question('Enter Admin Password: ');
-  }
-  rl.close();
-
-  console.log("Authenticating as Admin...");
-  try {
-    await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
-    console.log("Authenticated successfully.");
-  } catch (error) {
-    console.error("Failed to authenticate as Admin:", error.message);
+  if (!serviceAccountPath) {
+    console.error("Usage: node scripts/importMembersFromExcel.js <pathToServiceAccountJson> [pathToExcel]");
     process.exit(1);
   }
+
+  if (!fs.existsSync(serviceAccountPath)) {
+    console.error(`Service account file not found: ${serviceAccountPath}`);
+    process.exit(1);
+  }
+
+  const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+
+  const db = admin.firestore();
+  const auth = admin.auth();
 
   console.log(`Reading Excel file: ${excelFilePath}`);
   let data = [];
@@ -78,7 +54,7 @@ const runImport = async () => {
   console.log(`Found ${data.length} rows in Excel.`);
 
   console.log("Fetching existing teams...");
-  const teamsSnap = await getDocs(collection(db, 'teams'));
+  const teamsSnap = await db.collection('teams').get();
   const existingTeams = {};
   teamsSnap.docs.forEach(d => {
     existingTeams[d.data().name] = { id: d.id, ...d.data() };
@@ -91,14 +67,14 @@ const runImport = async () => {
       teamIdMap[code] = existingTeams[fullName].id;
     } else {
       console.log(`Creating missing team: ${fullName}`);
-      const newTeamRef = await addDoc(collection(db, 'teams'), { name: fullName });
+      const newTeamRef = await db.collection('teams').add({ name: fullName });
       teamIdMap[code] = newTeamRef.id;
       existingTeams[fullName] = { id: newTeamRef.id, name: fullName };
     }
   }
 
   console.log("Fetching existing members...");
-  const usersSnap = await getDocs(collection(db, 'users'));
+  const usersSnap = await db.collection('users').get();
   const existingMembersByRegdNo = {};
   usersSnap.docs.forEach(d => {
     const u = d.data();
@@ -169,24 +145,24 @@ const runImport = async () => {
     if (existingMember) {
       // Handle Conflict and Update
       let roleToSet = existingMember.role || 'Member';
-      let mustChangePasswordToSet = existingMember.mustChangePassword;
+      let mustChangePasswordToSet = existingMember.mustChangePassword !== undefined ? existingMember.mustChangePassword : true;
 
       if (existingMember.role === 'Team Leader') {
         if (existingMember.teamId !== teamId) {
           report.conflicts.push(`Team Leader ${name} (${regdNo}) is currently assigned to ${existingMember.teamId} but Excel lists team ${teamCodeStr || 'External'}. Role NOT downgraded, team NOT changed.`);
           report.skipped++;
-          continue; // Skip updating this privileged user automatically
+          continue; 
         }
       }
 
       try {
-        await setDoc(doc(db, 'users', existingMember.id), {
+        await db.collection('users').doc(existingMember.id).set({
           name,
           regdNo,
           branch,
           teamId,
           role: roleToSet,
-          email: existingMember.email, // preserve existing
+          email: existingMember.email, 
           mustChangePassword: mustChangePasswordToSet
         }, { merge: true });
         report.updatedMembers++;
@@ -201,33 +177,13 @@ const runImport = async () => {
       const initialPassword = regdNo;
 
       try {
-        // Use REST API to create user so Admin is not logged out
-        const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${firebaseConfig.apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: internalEmail,
-            password: initialPassword,
-            returnSecureToken: true
-          })
+        const userRecord = await auth.createUser({
+          email: internalEmail,
+          password: initialPassword,
+          displayName: name,
         });
 
-        const resData = await res.json();
-
-        if (!resData.localId) {
-          if (resData.error && resData.error.message === 'EMAIL_EXISTS') {
-             report.errors++;
-             report.errorDetails.push(`Email already exists for ${regdNo} (${internalEmail})`);
-          } else {
-             report.errors++;
-             report.errorDetails.push(`Failed to create Auth account for ${regdNo}: ${resData.error ? resData.error.message : 'Unknown error'}`);
-          }
-          continue;
-        }
-
-        const uid = resData.localId;
-
-        await setDoc(doc(db, 'users', uid), {
+        await db.collection('users').doc(userRecord.uid).set({
           name,
           regdNo,
           branch,
@@ -239,8 +195,13 @@ const runImport = async () => {
 
         report.newMembers++;
       } catch (err) {
-        report.errors++;
-        report.errorDetails.push(`Failed to create ${regdNo}: ${err.message}`);
+        if (err.code === 'auth/email-already-exists') {
+             report.errors++;
+             report.errorDetails.push(`Email already exists for ${regdNo} (${internalEmail})`);
+        } else {
+             report.errors++;
+             report.errorDetails.push(`Failed to create Auth account for ${regdNo}: ${err.message}`);
+        }
       }
     }
   }

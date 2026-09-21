@@ -1,4 +1,4 @@
-﻿rules_version = '2';
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
@@ -28,39 +28,51 @@ service cloud.firestore {
 
     match /club/status {
       allow read: if true;
-      allow create: if !exists(/databases/$(database)/documents/club/status) && request.auth != null;
+      allow create: if !exists(/databases/$(database)/documents/club/status) && isAdmin();
       allow update: if isAdmin();
+      allow delete: if false;
     }
 
     match /teams/{teamId} {
       allow read: if isAuthenticated();
-      // Only Admin can create/update/delete teams
       allow write: if isAdmin();
     }
     
     match /users/{userId} {
       // Admin: read all
       // Team Leader: read self, own team, and external members (teamId == null)
-      // Member: read self
+      // Member: read self (added: teamId check if they are in the same team? The prompt says: "can only access their own attendance/analytics")
       allow read: if isAdmin()
                   || (isLeader() && (!("teamId" in resource.data) || resource.data.teamId == userTeamId() || resource.data.teamId == null || userId == request.auth.uid))
                   || (isAuthenticated() && userId == request.auth.uid);
       
-      // Creating Admin is ONLY allowed if club/status doesn't exist
+      // Creating Admin is ONLY allowed if club/status doesn't exist and user is uninitialized
       allow create: if (isAdmin() && request.resource.data.role != 'Admin') 
-                    || (!exists(/databases/$(database)/documents/club/status) && request.resource.data.role == 'Admin' && request.auth.uid == userId);
+                    || (!exists(/databases/$(database)/documents/club/status) 
+                        && request.resource.data.role == 'Admin' 
+                        && request.auth.uid == userId
+                        && !exists(/databases/$(database)/documents/users/$(request.auth.uid)));
       
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() && resource.data.role != 'Admin';
       
       allow update: if 
-        // Self-update for anyone (no role/team change)
-        (isAuthenticated() && request.auth.uid == userId && request.resource.data.role == resource.data.role && request.resource.data.teamId == resource.data.teamId)
+        // Self-update for anyone (can only change mustChangePassword)
+        (isAuthenticated() && request.auth.uid == userId 
+          && request.resource.data.role == resource.data.role 
+          && request.resource.data.teamId == resource.data.teamId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mustChangePassword'])
+        )
         || 
-        // Admin updating someone else (cannot change them to Admin)
-        (isAdmin() && request.auth.uid != userId && request.resource.data.role != 'Admin')
+        // Admin updating someone else (cannot change them to Admin, cannot demote Admin)
+        (isAdmin() && request.auth.uid != userId && request.resource.data.role != 'Admin' && resource.data.role != 'Admin')
         ||
-        // Team Leader managing team membership
-        (isLeader() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teamId']) && (request.resource.data.teamId == userTeamId() || request.resource.data.teamId == null) && (resource.data.teamId == userTeamId() || resource.data.teamId == null));
+        // Team Leader managing team membership (only Members, only own team)
+        (isLeader() 
+          && resource.data.role == 'Member'
+          && request.resource.data.role == 'Member'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teamId']) 
+          && (request.resource.data.teamId == userTeamId() || request.resource.data.teamId == null) 
+          && (resource.data.teamId == userTeamId() || resource.data.teamId == null));
     }
     
     match /attendance/{recordId} {
@@ -93,14 +105,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Progress: Members write their own; Leaders read their team's; Admins read all
     match /progress/{progressId} {
       allow read: if isAuthenticated() && (
         request.auth.uid == resource.data.memberId ||
         isAdmin() ||
         (isLeader() && userTeamId() == get(/databases/$(database)/documents/users/$(resource.data.memberId)).data.teamId)
       );
-      // Members can only write their own progress (not others')
       allow write: if isAuthenticated() && (
         request.auth.uid == request.resource.data.memberId ||
         isAdmin()
@@ -125,7 +135,6 @@ service cloud.firestore {
         isAdmin() ||
         (isLeader() && userTeamId() == resource.data.teamId)
       );
-      // Members write their own; no peer review (V1 boundary)
       allow write: if isAuthenticated() && (
         request.auth.uid == request.resource.data.memberId ||
         isAdmin()
@@ -148,7 +157,6 @@ service cloud.firestore {
     // =========================================================================
 
     match /objectives/{objectiveId} {
-      // Members can read but NOT write objectives (only Leaders/Admins define objectives)
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == request.resource.data.teamId));
     }
@@ -162,11 +170,10 @@ service cloud.firestore {
     }
     match /task_assignments/{assignmentId} {
       allow read: if isAuthenticated();
-      // Members can only update their OWN task assignment (e.g. marking COMPLETED)
       allow write: if isAuthenticated() && (
         isAdmin() || 
         (isLeader() && userTeamId() == request.resource.data.teamId) ||
-        request.auth.uid == resource.data.memberId
+        (request.auth.uid == resource.data.memberId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'completedAt']))
       );
     }
     match /projects/{projectId} {
@@ -175,8 +182,8 @@ service cloud.firestore {
     }
     match /project_milestones/{milestoneId} {
       allow read: if isAuthenticated();
-      // Tightened: only Leaders and Admins manage milestones
-      allow write: if isAuthenticated() && (isAdmin() || isLeader());
+      // Only Leaders of the team and Admins manage milestones
+      allow write: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == request.resource.data.teamId));
     }
 
     // =========================================================================
@@ -189,17 +196,16 @@ service cloud.firestore {
         (isLeader() && userTeamId() == resource.data.teamId) ||
         request.auth.uid == resource.data.memberId
       );
-      // Members write their own. Leaders can update status (e.g. CHANGES_REQUESTED).
       allow write: if isAuthenticated() && (
         isAdmin() || 
         (isLeader() && userTeamId() == request.resource.data.teamId) ||
-        request.auth.uid == request.resource.data.memberId
+        (request.auth.uid == request.resource.data.memberId && request.resource.data.teamId == userTeamId())
       );
     }
 
     match /rubrics/{rubricId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin(); // Only Admins create/version rubrics
+      allow write: if isAdmin();
     }
 
     match /evaluations/{evalId} {
@@ -208,14 +214,12 @@ service cloud.firestore {
         (isLeader() && userTeamId() == get(/databases/$(database)/documents/project_submissions/$(resource.data.submissionId)).data.teamId) ||
         request.auth.uid == get(/databases/$(database)/documents/project_submissions/$(resource.data.submissionId)).data.memberId
       );
-      // Only Admins and Team Leaders may create evaluations (no peer review - V1 boundary)
-      allow write: if isAuthenticated() && (isAdmin() || isLeader());
-      // Members CANNOT alter evaluator scores
+      allow write: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == get(/databases/$(database)/documents/project_submissions/$(request.resource.data.submissionId)).data.teamId));
       allow update: if isAdmin() || (isLeader() && userTeamId() == get(/databases/$(database)/documents/project_submissions/$(resource.data.submissionId)).data.teamId);
     }
 
     // =========================================================================
-    // GROWTH & SKILLS (Phase 5) - FR-GROW-03: Never manually editable by members
+    // GROWTH & SKILLS (Phase 5)
     // =========================================================================
 
     match /growth/{snapshotId} {
@@ -224,7 +228,6 @@ service cloud.firestore {
         (isLeader() && userTeamId() == resource.data.teamId) ||
         request.auth.uid == resource.data.memberId
       );
-      // FR-GROW-03: Growth is NEVER manually editable by members/leaders
       allow write: if isAdmin();
     }
 
@@ -234,8 +237,7 @@ service cloud.firestore {
         isLeader() ||
         request.auth.uid == resource.data.memberId
       );
-      // Leaders can grant skills as evidence-based acknowledgment; Admin always can
-      allow write: if isAuthenticated() && (isAdmin() || isLeader());
+      allow write: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == get(/databases/$(database)/documents/users/$(request.resource.data.memberId)).data.teamId));
     }
 
     // =========================================================================
@@ -247,22 +249,17 @@ service cloud.firestore {
         request.auth.uid == resource.data.recipientId ||
         isAdmin()
       );
-      allow create: if isAuthenticated();
-      allow delete: if false; // Soft delete only (mark readAt)
+      // ONLY Admin and Leaders can send notifications. Members can't.
+      allow create: if isAdmin() || isLeader();
+      allow delete: if false; 
     }
 
     match /audit_logs/{logId} {
       allow read: if isAdmin();
-      // Append-only - no updates or deletes by ANYONE (NFR-OBS-01)
-      allow create: if isAuthenticated();
+      allow create: if isAdmin() || isLeader();
       allow update, delete: if false;
     }
 
-    // =========================================================================
-    
-    // =========================================================================
-    // DEFAULT DENY (Catch-all - rejects any unmatched collection)
-    // =========================================================================
     match /{document=**} {
       allow read, write: if false;
     }

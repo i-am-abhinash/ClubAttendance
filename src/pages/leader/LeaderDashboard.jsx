@@ -35,9 +35,13 @@ const LeaderDashboard = () => {
       if (!user?.teamId) return;
       setLoading(true);
       try {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const startDateString = thirtyDaysAgo.toISOString().split('T')[0];
+
         const m = await fetchMembers(user.teamId);
         setTeamMembers(m);
-        const r = await fetchAttendance(user.teamId);
+        const r = await fetchAttendance(user.teamId, null, startDateString);
         setRecords(r);
       } catch (err) {
         console.error(err);

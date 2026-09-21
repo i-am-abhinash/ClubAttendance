@@ -38,10 +38,14 @@ const TeamDetails = () => {
     const loadInitialData = async () => {
       setLoading(true);
       try {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const startDateString = thirtyDaysAgo.toISOString().split('T')[0];
+
         const [teamsData, membersData, recordsData] = await Promise.all([
           fetchTeams(),
           fetchMembers(effectiveTeamId),
-          fetchAttendance(effectiveTeamId)
+          fetchAttendance(effectiveTeamId, null, startDateString)
         ]);
 
         const team = teamsData.find(t => t.id === effectiveTeamId);
