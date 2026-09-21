@@ -212,12 +212,12 @@ const Layout = ({ children, title, description }) => {
         </div>
       </header>
 
-      <div className="flex-1 flex relative w-full pt-[88px]">
+      <div className="flex-1 flex w-full pt-[88px]">
         {/* Independent Radial Navigation (Fixed on Left Edge) */}
         <RadialNavigation />
         
         {/* Main Content Area */}
-        <main className="flex-1 py-6 pr-6 lg:py-10 lg:pr-10 pl-[80px] sm:pl-[100px] lg:pl-[120px] max-w-[1600px] w-full z-10 relative mx-auto">
+        <main className="flex-1 py-6 pr-6 lg:py-10 lg:pr-10 pl-[80px] sm:pl-[100px] lg:pl-[120px] max-w-[1600px] w-full mx-auto">
           <div className="sm:hidden mb-6">
             <h2 className="text-lg font-bold text-theme-primary">{title}</h2>
             <p className="text-xs text-theme-text-secondary mt-1">{description}</p>
