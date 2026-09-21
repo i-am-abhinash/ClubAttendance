@@ -1,4 +1,4 @@
-﻿import { isSameDay, isSameWeek, isSameMonth, parseISO, format, subMonths, startOfMonth, eachMonthOfInterval } from 'date-fns';
+import { isSameDay, isSameWeek, isSameMonth, parseISO, format, subMonths, startOfMonth, eachMonthOfInterval } from 'date-fns';
 
 export const calculateAttendanceStats = (records, members = []) => {
   const total = records.length;
@@ -18,7 +18,7 @@ export const calculateAttendanceStats = (records, members = []) => {
 
   const trendData = past6Months.map(monthDate => {
     const monthStr = format(monthDate, 'MMM');
-    const monthRecords = records.filter(r => isSameMonth(parseISO(r.date), monthDate));
+    const monthRecords = records.filter(r => r.date && isSameMonth(parseISO(r.date), monthDate));
     const mPresent = monthRecords.filter(r => r.status === 'Present').length;
     const mAbsent = monthRecords.filter(r => r.status === 'Absent').length;
     const mLate = monthRecords.filter(r => r.status === 'Late').length;
@@ -49,6 +49,14 @@ export const applyFilters = (records, filters) => {
 
   if (filters.timePeriod && filters.timePeriod !== 'all') {
     filtered = filtered.filter(r => {
+      if (!r.date) return false;
+
+      if (filters.timePeriod === 'custom') {
+        if (filters.customStart && r.date < filters.customStart) return false;
+        if (filters.customEnd && r.date > filters.customEnd) return false;
+        return true;
+      }
+
       const recordDate = parseISO(r.date);
       if (filters.timePeriod === 'today') return isSameDay(recordDate, now);
       if (filters.timePeriod === 'week') return isSameWeek(recordDate, now, { weekStartsOn: 1 });

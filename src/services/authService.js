@@ -93,8 +93,11 @@ export const changeUserPassword = async (currentPassword, newPassword) => {
   const credential = EmailAuthProvider.credential(user.email, currentPassword);
   await reauthenticateWithCredential(user, credential);
   
-  // Update password
+  // Update password in Auth
   await updatePassword(user, newPassword);
+  
+  // Update flag in Firestore
+  await setDoc(doc(db, 'users', user.uid), { mustChangePassword: false }, { merge: true });
 };
 
 export const subscribeToAuthChanges = (callback) => {

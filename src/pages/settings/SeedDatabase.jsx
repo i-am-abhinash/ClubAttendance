@@ -182,15 +182,35 @@ const SeedDatabase = () => {
     }
   };
 
+  const handleCleanupDummies = async () => {
+    if (!window.confirm("This will delete all users that do NOT have a Registration Number. Proceed?")) return;
+    try {
+      setStatus('Fetching users for cleanup...');
+      const usersSnap = await getDocs(collection(db, 'users'));
+      let deleted = 0;
+      for (const d of usersSnap.docs) {
+        const u = d.data();
+        if (u.role !== 'Admin' && !u.regdNo) {
+          await deleteDoc(d.ref);
+          deleted++;
+        }
+      }
+      setStatus(`Successfully deleted ${deleted} dummy members!`);
+    } catch(err) {
+      console.error(err);
+      setStatus(`Error: ${err.message}`);
+    }
+  };
+
   return (
     <div className="card p-6 mt-6 border-theme-absent/50">
-      <h3 className="text-lg font-bold text-theme-absent mb-2">Danger Zone: Database Seeder</h3>
+      <h3 className="text-lg font-bold text-theme-absent mb-2">Danger Zone: Database Tools</h3>
       <p className="text-sm text-theme-text-secondary mb-4">
         The User Seeder will wipe all existing members and generate 50 new members. <br/>
         The Attendance Seeder will generate 90 days (3 months) of realistic random attendance for all assigned members.
       </p>
       
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-wrap">
         <button 
           onClick={handleSeed}
           className="bg-theme-absent text-white px-4 py-2 rounded-lg font-medium hover:bg-theme-absent/80 transition-colors"
@@ -202,6 +222,12 @@ const SeedDatabase = () => {
           className="bg-theme-accent text-white px-4 py-2 rounded-lg font-medium hover:bg-theme-accent/80 transition-colors"
         >
           Generate Dummy Attendance
+        </button>
+        <button 
+          onClick={handleCleanupDummies}
+          className="bg-orange-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-orange-600 transition-colors"
+        >
+          Cleanup Dummy Members
         </button>
         <span className="text-sm font-semibold text-theme-cyan">{status} {progress > 0 && progress < 100 ? `${progress}%` : ''}</span>
       </div>

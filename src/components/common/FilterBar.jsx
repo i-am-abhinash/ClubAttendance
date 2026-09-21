@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { fetchTeams } from '../../services/teamService';
 import { Calendar, Users, Filter, RotateCcw, Activity } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -17,7 +17,7 @@ const FilterBar = ({ filters, setFilters, availableTeams = [] }) => {
   }, [isAdmin, availableTeams]);
 
   const resetFilters = () => {
-    setFilters({ timePeriod: 'all', teamId: 'all', status: 'all' });
+    setFilters({ timePeriod: 'all', teamId: 'all', status: 'all', customStart: '', customEnd: '' });
   };
 
   const timeOptions = [
@@ -25,6 +25,7 @@ const FilterBar = ({ filters, setFilters, availableTeams = [] }) => {
     { label: 'Today', value: 'today' },
     { label: 'This Week', value: 'week' },
     { label: 'This Month', value: 'month' },
+    { label: 'Custom Range', value: 'custom' },
   ];
 
   const teamOptions = [
@@ -52,11 +53,32 @@ const FilterBar = ({ filters, setFilters, availableTeams = [] }) => {
       <div className="flex-1 min-w-[140px] max-w-[200px]">
         <Dropdown 
           options={timeOptions} 
-          value={filters.timePeriod} 
+          value={filters.timePeriod || 'all'} 
           onChange={(val) => setFilters({ ...filters, timePeriod: val })} 
           icon={Calendar} 
         />
       </div>
+
+      {filters.timePeriod === 'custom' && (
+        <>
+          <div className="h-6 w-px bg-theme-border hidden sm:block mx-1"></div>
+          <div className="flex items-center gap-2 text-sm text-theme-text-secondary flex-wrap">
+            <input 
+              type="date" 
+              className="bg-theme-bg border border-theme-border rounded-lg px-2 py-1.5 focus:outline-none focus:border-theme-cyan"
+              value={filters.customStart || ''}
+              onChange={e => setFilters({ ...filters, customStart: e.target.value })}
+            />
+            <span className="text-xs">to</span>
+            <input 
+              type="date" 
+              className="bg-theme-bg border border-theme-border rounded-lg px-2 py-1.5 focus:outline-none focus:border-theme-cyan"
+              value={filters.customEnd || ''}
+              onChange={e => setFilters({ ...filters, customEnd: e.target.value })}
+            />
+          </div>
+        </>
+      )}
 
       {/* Team Filter (Admin Only) */}
       {isAdmin && (

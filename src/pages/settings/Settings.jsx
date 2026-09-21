@@ -2,17 +2,19 @@ import React, { useState } from 'react';
 import Layout from '../../components/common/Layout';
 import { useAuth } from '../../context/AuthContext';
 import { Settings as SettingsIcon, Shield, Key } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import SeedDatabase from './SeedDatabase';
 
 const Settings = () => {
   const { user, changePassword } = useAuth();
+  const location = useLocation();
   
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(location.state?.message || '');
   const [error, setError] = useState('');
 
   const handlePasswordChange = async (e) => {
