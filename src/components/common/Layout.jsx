@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import RadialNavigation from './RadialNavigation';
-import { Search, Bell, Users, Briefcase, X, Fingerprint } from 'lucide-react';
+import { Search, Users, Briefcase, X, Fingerprint } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { fetchMembers } from '../../services/memberService';
 import { fetchTeams } from '../../services/teamService';
@@ -197,11 +197,6 @@ const Layout = ({ children, title, description }) => {
           <div className="hidden sm:block text-[13px] font-medium text-theme-text-secondary">
             {today}
           </div>
-          
-          <button className="text-theme-muted hover:text-theme-primary transition-colors relative">
-            <Bell className="w-5 h-5" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-theme-cyan rounded-full border-2 border-[#0A101A]"></span>
-          </button>
           
           <div className="h-8 w-px bg-theme-border hidden sm:block"></div>
           
