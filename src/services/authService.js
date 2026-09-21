@@ -9,7 +9,7 @@ import {
   getAuth
 } from 'firebase/auth';
 import { initializeApp } from 'firebase/app';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { checkAdminExists, setAdminExists } from './configService';
 
@@ -101,21 +101,32 @@ export const changeUserPassword = async (currentPassword, newPassword) => {
 };
 
 export const subscribeToAuthChanges = (callback) => {
-  return onAuthStateChanged(auth, async (user) => {
+  let unsubscribeSnapshot = null;
+
+  const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+    if (unsubscribeSnapshot) {
+      unsubscribeSnapshot();
+      unsubscribeSnapshot = null;
+    }
+
     if (user) {
-      try {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
+      unsubscribeSnapshot = onSnapshot(doc(db, 'users', user.uid), (userDoc) => {
         if (userDoc.exists()) {
           callback({ uid: user.uid, email: user.email, ...userDoc.data() });
         } else {
           callback(null);
         }
-      } catch (error) {
+      }, (error) => {
         console.error("Error fetching user data:", error);
         callback(null);
-      }
+      });
     } else {
       callback(null);
     }
   });
+
+  return () => {
+    if (unsubscribeSnapshot) unsubscribeSnapshot();
+    unsubscribeAuth();
+  };
 };

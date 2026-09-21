@@ -3,7 +3,6 @@ import Layout from '../../components/common/Layout';
 import { useAuth } from '../../context/AuthContext';
 import { Settings as SettingsIcon, Shield, Key } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
-import SeedDatabase from './SeedDatabase';
 
 const Settings = () => {
   const { user, changePassword } = useAuth();
@@ -137,9 +136,6 @@ const Settings = () => {
             </form>
           </div>
         </div>
-
-        {/* Admin Tools */}
-        {user?.role === 'Admin' && <SeedDatabase />}
 
       </div>
     </Layout>
