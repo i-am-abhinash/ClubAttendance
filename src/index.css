@@ -81,7 +81,10 @@
     box-shadow: 0 10px 25px rgba(109, 124, 255, 0.15);
   }
   .card.cursor-pointer:active {
-    @apply scale-[0.99] translate-y-0;
+    @apply scale-[0.99] translate-y-0 brightness-95 opacity-90;
+  }
+  .dark .card.cursor-pointer:active {
+    @apply brightness-110 opacity-90;
   }
 
   /* Typography */
@@ -107,7 +110,10 @@
     box-shadow: 0 8px 25px rgba(109, 124, 255, 0.35);
   }
   .btn-primary:active {
-    @apply scale-95 translate-y-[1px];
+    @apply scale-95 translate-y-[1px] brightness-90 opacity-90;
+  }
+  .dark .btn-primary:active {
+    @apply brightness-110 opacity-90;
   }
   .btn-primary:disabled {
     @apply opacity-50 pointer-events-none;
@@ -130,7 +136,10 @@
     @apply border-[#38BDF8] text-[#38BDF8];
   }
   .btn-secondary:active {
-    @apply scale-95 translate-y-[1px];
+    @apply scale-95 translate-y-[1px] brightness-90 bg-theme-surface-secondary opacity-90;
+  }
+  .dark .btn-secondary:active {
+    @apply brightness-110 opacity-90;
   }
 
   .btn-icon {
@@ -142,6 +151,12 @@
   .dark .btn-icon:hover {
     box-shadow: 0 8px 20px rgba(109, 124, 255, 0.15);
     @apply text-theme-text bg-[#111B2A] border-theme-accent;
+  }
+  .btn-icon:active {
+    @apply scale-95 brightness-90 opacity-90 bg-theme-surface-secondary;
+  }
+  .dark .btn-icon:active {
+    @apply brightness-110 opacity-90;
   }
 
   /* Modern Data Table */
@@ -188,7 +203,10 @@
     @apply bg-[#111B2A];
   }
   .premium-table tr.cursor-pointer:active {
-    @apply scale-[0.99];
+    @apply scale-[0.99] brightness-95 opacity-90 bg-theme-surface-secondary;
+  }
+  .dark .premium-table tr.cursor-pointer:active {
+    @apply brightness-110 opacity-90;
   }
 
   /* Scrollbar */
