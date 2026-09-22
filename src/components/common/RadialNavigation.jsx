@@ -127,16 +127,16 @@ const RadialNavigation = () => {
             className={clsx(
               "absolute z-50 rounded-full flex items-center justify-center transition-all duration-300",
               "w-full h-full cursor-pointer",
-              "bg-theme-surface border border-theme-border shadow-soft",
-              isOpen ? "scale-95 shadow-float border-theme-text" : "hover:scale-105 hover:shadow-float hover:border-theme-text"
+              "bg-[#0A101A] border border-[#1E2A3A] shadow-[0_0_20px_rgba(109,124,255,0.15)]",
+              isOpen ? "scale-95 shadow-[0_0_25px_rgba(56,189,248,0.3)] border-[#38BDF8]" : "hover:scale-105 hover:shadow-[0_0_25px_rgba(109,124,255,0.3)] hover:border-[#6D7CFF]"
             )}
           >
-            <div className="w-[85%] h-[85%] rounded-full flex items-center justify-center overflow-hidden bg-theme-surface">
+            <div className="w-[85%] h-[85%] rounded-full flex items-center justify-center overflow-hidden bg-[#0A101A]">
                <img 
                 src="/mitra-logo.jpg" 
                 alt="MITRA" 
-                className={`w-[70%] h-[70%] object-contain ${theme === 'dark' ? 'mix-blend-screen' : 'mix-blend-multiply'}`}
-                style={{ filter: theme === 'dark' ? 'invert(1) grayscale(100%) brightness(1.5)' : 'grayscale(100%) brightness(1.1)' }}
+                className="w-[70%] h-[70%] object-contain mix-blend-screen"
+                style={{ filter: 'invert(1) grayscale(100%) brightness(1.5)' }}
               />
             </div>
           </div>

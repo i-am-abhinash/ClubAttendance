@@ -32,6 +32,8 @@ export default {
           'absent-bg': 'var(--color-absent-bg)',
           late: 'var(--color-late)',
           'late-bg': 'var(--color-late-bg)',
+          
+          cyan: 'var(--color-cyan)',
         }
       },
       boxShadow: {
