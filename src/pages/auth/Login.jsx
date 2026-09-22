@@ -54,7 +54,7 @@ const Login = () => {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-sm">
-        <div className="bg-theme-surface px-6 py-10 shadow-soft sm:rounded-2xl sm:px-12 border border-theme-border-subtle">
+        <div className="bg-theme-bg px-6 py-10 shadow-soft sm:rounded-2xl sm:px-12 border" style={{borderColor: 'var(--color-border-solid)' }}>
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="bg-theme-absent-bg text-theme-absent p-3 rounded-lg text-sm border border-theme-absent/20">
@@ -75,7 +75,7 @@ const Login = () => {
                   required
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="block w-full rounded-lg border-0 py-2 text-theme-text shadow-sm ring-1 ring-inset ring-theme-border-subtle focus:ring-2 focus:ring-inset focus:ring-theme-text sm:text-sm sm:leading-6 px-3 transition-shadow"
+                  className="block w-full rounded-lg border-0 py-2 text-theme-text shadow-sm ring-1 ring-inset ring-theme-border-solid focus:ring-2 focus:ring-inset focus:ring-theme-text sm:text-sm sm:leading-6 px-3 transition-shadow bg-theme-bg"
                 />
               </div>
             </div>
@@ -93,7 +93,7 @@ const Login = () => {
                   required
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="block w-full rounded-lg border-0 py-2 text-theme-text shadow-sm ring-1 ring-inset ring-theme-border-subtle focus:ring-2 focus:ring-inset focus:ring-theme-text sm:text-sm sm:leading-6 px-3 transition-shadow"
+                  className="block w-full rounded-lg border-0 py-2 text-theme-text shadow-sm ring-1 ring-inset ring-theme-border-solid focus:ring-2 focus:ring-inset focus:ring-theme-text sm:text-sm sm:leading-6 px-3 transition-shadow bg-theme-bg"
                 />
               </div>
             </div>

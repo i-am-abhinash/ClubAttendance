@@ -1,4 +1,4 @@
-﻿/** @type {import('tailwindcss').Config} */
+/** @type {import('tailwindcss').Config} */
 export default {
   darkMode: 'class',
   content: [
@@ -17,6 +17,7 @@ export default {
           surface: 'var(--color-surface)',
           'surface-secondary': 'var(--color-surface-secondary)',
           border: 'var(--color-border)',
+          'border-solid': 'var(--color-border-solid)',
           
           text: 'var(--color-text)',
           'text-secondary': 'var(--color-text-secondary)',

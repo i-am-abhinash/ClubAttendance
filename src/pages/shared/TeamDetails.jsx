@@ -6,7 +6,7 @@ import { fetchMembers } from '../../services/memberService';
 import { fetchAttendance, markAttendance } from '../../services/attendanceService';
 import { fetchTeams } from '../../services/teamService';
 import { TeamAnalytics } from '../../components/analytics/TeamAnalytics';
-import { Users, Calendar, TrendingUp, Search, ArrowLeft, ShieldAlert, CheckCircle2, Clock, XCircle, Minus } from 'lucide-react';
+import { Users, Calendar, TrendingUp, Search, ArrowLeft, ShieldAlert, CheckCircle2, Clock, XCircle, Minus, X, Fingerprint, Briefcase } from 'lucide-react';
 import clsx from 'clsx';
 
 const TeamDetails = () => {
@@ -27,6 +27,8 @@ const TeamDetails = () => {
   
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [search, setSearch] = useState('');
+  const [selectedMember, setSelectedMember] = useState(null);
+
 
   useEffect(() => {
     if (!effectiveTeamId) {
@@ -161,6 +163,7 @@ const TeamDetails = () => {
   }
 
   return (
+    <>
     <Layout title={teamInfo?.name || "Team Workspace"} description="Unified team management and analytics.">
       
       {/* Header Actions */}
@@ -251,7 +254,10 @@ const TeamDetails = () => {
               </thead>
               <tbody>
                 {members.map(member => (
-                  <tr key={member.id}>
+                  <tr key={member.id} 
+                    onClick={() => setSelectedMember(member)}
+                    className="cursor-pointer hover:bg-theme-bg-secondary transition-colors group"
+                  >
                     <td>
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-theme-surface-higher flex items-center justify-center font-bold text-xs text-theme-text border border-theme-border shadow-inner">
@@ -270,7 +276,7 @@ const TeamDetails = () => {
                       </span>
                     </td>
                     {(isAdmin || isLeader) && (
-                      <td className="text-right">
+                      <td className="text-right" onClick={(e) => e.stopPropagation()}>
                         {member.role !== 'Team Leader' && (
                           <button
                             onClick={async () => {
@@ -453,6 +459,69 @@ const TeamDetails = () => {
       )}
 
     </Layout>
+
+      {/* Member Profile Modal */}
+      {selectedMember && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-theme-bg border rounded-2xl w-full max-w-md shadow-float overflow-hidden animate-in zoom-in-95 duration-200" style={{borderColor:'var(--color-border-solid)'}}>
+            <div className="h-20 bg-theme-bg-secondary relative">
+              <button 
+                onClick={() => setSelectedMember(null)}
+                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-theme-bg text-theme-text hover:bg-theme-muted/20 transition-colors border border-theme-border-solid"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-6 pb-6 relative">
+              <div className="w-20 h-20 rounded-2xl bg-theme-bg-secondary border-[3px] border-theme-bg flex items-center justify-center text-3xl font-bold text-theme-text shadow-lg absolute -top-10 left-6" style={{borderColor:'var(--color-border-solid)'}}>
+                {selectedMember.name?.charAt(0).toUpperCase()}
+              </div>
+              <div className="pt-12">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-xl font-bold text-theme-text">{selectedMember.name}</h2>
+                    <p className="text-theme-text-secondary text-sm flex items-center gap-2 mt-1">
+                      <Fingerprint className="w-3.5 h-3.5" /> {selectedMember.regdNo || 'No RegdNo'}
+                    </p>
+                  </div>
+                  <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md ${
+                    selectedMember.role === 'Admin' ? 'bg-theme-present-bg text-theme-present' :
+                    selectedMember.role === 'Team Leader' ? 'bg-theme-accent/10 text-theme-accent' :
+                    'bg-theme-bg-secondary text-theme-muted border border-theme-border-solid'
+                  }`}>
+                    {selectedMember.role}
+                  </span>
+                </div>
+                <div className="mt-6 space-y-4">
+                  <div className="rounded-xl p-4 border" style={{background:'var(--color-bg-secondary)', borderColor:'var(--color-border-solid)'}}>
+                    <div className="text-[10px] font-bold uppercase tracking-wider text-theme-muted mb-1">Team</div>
+                    <div className="text-sm font-semibold text-theme-text flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-theme-text-secondary" /> {teamInfo?.name || 'This Team'}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="rounded-xl p-4 border" style={{background:'var(--color-bg-secondary)', borderColor:'var(--color-border-solid)'}}>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-theme-muted mb-1">Branch</div>
+                      <div className="text-sm font-semibold text-theme-text truncate">{selectedMember.branch || 'N/A'}</div>
+                    </div>
+                    <div className="rounded-xl p-4 border" style={{background:'var(--color-bg-secondary)', borderColor:'var(--color-border-solid)'}}>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-theme-muted mb-1">Status</div>
+                      <div className="text-sm font-semibold text-theme-text">Active</div>
+                    </div>
+                  </div>
+                  {selectedMember.email && (
+                    <div className="rounded-xl p-4 border" style={{background:'var(--color-bg-secondary)', borderColor:'var(--color-border-solid)'}}>
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-theme-muted mb-1">Email</div>
+                      <div className="text-sm font-mono text-theme-text-secondary truncate">{selectedMember.email}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

@@ -89,31 +89,34 @@ const Layout = ({ children, title, description }) => {
         />
 
       {/* Top Header - Full Width */}
-      <header className="fixed top-0 left-0 right-0 h-[88px] w-full flex items-center justify-between px-6 lg:px-10 border-b border-theme-border bg-theme-surface/80 backdrop-blur-md z-50">
+      <header className="fixed top-0 left-0 right-0 h-[88px] w-full flex items-center gap-3 px-6 lg:px-10 border-b border-theme-border bg-theme-surface/80 backdrop-blur-md z-50" style={{backdropFilter:'blur(16px)', WebkitBackdropFilter:'blur(16px)', background: theme === 'dark' ? 'rgba(13,20,32,0.9)' : 'rgba(255,255,255,0.72)'}}>
         
-        <div className="flex-1 min-w-0 pr-4 flex items-center gap-4">
-          
+        {/* Left: Logo + Title (shrinks before overlapping) */}
+        <div className="flex items-center gap-3 min-w-0 shrink">
           <img 
             src="/mitra-logo.jpg" 
             alt="MITRA Logo" 
-            className={`h-10 sm:h-12 w-auto object-contain ${theme === 'dark' ? 'mix-blend-screen' : 'mix-blend-multiply'}`}
+            className={`h-9 sm:h-11 w-auto shrink-0 object-contain ${theme === 'dark' ? 'mix-blend-screen' : 'mix-blend-multiply'}`}
             style={{ filter: theme === 'dark' ? 'invert(1) grayscale(100%) brightness(1.5)' : 'grayscale(100%) brightness(1.1)' }}
           />
           
-          <div className="flex flex-col justify-center border-l border-theme-border pl-4 ml-2">
-            <h1 className="text-[20px] sm:text-[22px] font-bold text-theme-primary truncate">
+          <div className="flex flex-col justify-center border-l border-theme-border-solid pl-3 min-w-0">
+            <h1 className="text-[18px] sm:text-[20px] font-bold text-theme-text truncate leading-tight">
               {getGreeting()}, {user?.name?.split(' ')[0]}
             </h1>
-            <p className="text-[12px] sm:text-[13px] text-theme-text-secondary mt-0.5 truncate hidden sm:block">
+            <p className="text-[11px] sm:text-[12px] text-theme-text-secondary truncate hidden sm:block">
               {title} - {description}
             </p>
           </div>
         </div>
-        
-        <div className="flex items-center gap-5 shrink-0">
+
+        {/* Center: Search (flex-grow but capped) */}
+        <div className="flex-1" />
+
+        <div className="flex items-center gap-3 shrink-0">
           {/* Search */}
           {user?.role === 'Admin' && (
-            <div ref={searchRef} className="hidden md:block relative w-64 z-50">
+            <div ref={searchRef} className="hidden md:block relative w-52 lg:w-64 z-50">
               <div className="relative">
                 <Search className="w-4 h-4 text-theme-muted absolute left-3 top-1/2 -translate-y-1/2" />
                 <input 
@@ -122,7 +125,11 @@ const Layout = ({ children, title, description }) => {
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   onFocus={() => setIsSearchFocused(true)}
-                  className="w-full bg-theme-surface-elevated border border-theme-border rounded-full py-2 pl-9 pr-8 text-[13px] text-theme-text focus:outline-none focus:border-theme-text focus:ring-1 focus:ring-theme-text transition-all placeholder-theme-muted"
+                  className="w-full border rounded-full py-2 pl-9 pr-8 text-[13px] text-theme-text focus:outline-none focus:ring-1 focus:ring-theme-text transition-all placeholder-theme-muted"
+                  style={{
+                    background: theme === 'dark' ? '#111B2A' : 'rgba(255,255,255,0.80)',
+                    borderColor: theme === 'dark' ? '#1E2A3A' : 'rgba(0,0,0,0.10)',
+                  }}
                 />
                 {searchQuery && (
                   <button 
