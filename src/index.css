@@ -4,28 +4,39 @@
 
 @layer base {
   :root {
-    --color-bg: #F3F4F6;
+    /* Page backgrounds — soft off-white, not pure white */
+    --color-bg: #F1F2F3;
     --color-bg-secondary: #E9EAEC;
-    --color-surface: rgba(255, 255, 255, 0.55);
-    --color-surface-secondary: rgba(255, 255, 255, 0.40);
-    --color-border: rgba(255, 255, 255, 0.60);
-    --color-border-solid: rgba(0, 0, 0, 0.08);
-    
+
+    /* Glass surfaces — white with transparency for cards */
+    --color-surface: rgba(255, 255, 255, 0.65);
+    --color-surface-secondary: rgba(255, 255, 255, 0.50);
+
+    /* Borders:
+       --color-border      → used on chart grids, table rows, card edges (needs to be VISIBLE)
+       --color-border-solid → used on inputs, login form, separators (needs to be CLEAR) */
+    --color-border: #D6D8DB;
+    --color-border-solid: rgba(0, 0, 0, 0.12);
+    --color-separator: #E0E1E3;
+
+    /* Text */
     --color-text: #171717;
     --color-text-secondary: #525252;
-    --color-muted: #888888;
-    
+    --color-muted: #737373;
+
+    /* Accents */
     --color-accent: #171717;
     --color-cyan: #525252;
     --color-button: #171717;
     --color-button-text: #FFFFFF;
-    
-    --color-present: #333333;
-    --color-present-bg: rgba(0, 0, 0, 0.05);
-    --color-absent: #888888;
-    --color-absent-bg: rgba(0, 0, 0, 0.02);
-    --color-late: #555555;
-    --color-late-bg: rgba(0, 0, 0, 0.03);
+
+    /* Status colors — monochrome in light mode */
+    --color-present: #3D3D3D;
+    --color-present-bg: rgba(0, 0, 0, 0.06);
+    --color-absent: #6B6B6B;
+    --color-absent-bg: rgba(0, 0, 0, 0.04);
+    --color-late: #505050;
+    --color-late-bg: rgba(0, 0, 0, 0.05);
   }
 
   .dark {
@@ -65,16 +76,16 @@
 @layer components {
   /* Minimalist Premium Card (Glass in light mode, original in dark mode) */
   .card {
-    @apply rounded-[12px] border transition-all duration-300 relative overflow-hidden;
-    background: rgba(255, 255, 255, 0.55);
+    @apply rounded-[12px] transition-all duration-300 relative overflow-hidden;
+    background: rgba(255, 255, 255, 0.65);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.60);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.04);
+    border: 1px solid #D6D8DB;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
   }
   .card:hover {
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-    border-color: rgba(255, 255, 255, 0.80);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.06);
+    border-color: #C4C6CA;
   }
   .dark .card {
     @apply backdrop-blur-none bg-[#0D1420] border border-[#1E2A3A];
@@ -88,7 +99,8 @@
   /* Clickable Cards & Elements */
   .card.cursor-pointer:hover {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-    @apply -translate-y-[2px] border-theme-accent;
+    @apply -translate-y-[2px];
+    border-color: #A0A3A8;
   }
   .dark .card.cursor-pointer:hover {
     box-shadow: 0 10px 25px rgba(109, 124, 255, 0.15);
@@ -98,6 +110,20 @@
   }
   .dark .card.cursor-pointer:active {
     @apply brightness-110 opacity-90;
+  }
+
+  /* Light mode: global input baseline — visible border, clear background */
+  :root input:not([type="checkbox"]):not([type="radio"]),
+  :root select,
+  :root textarea {
+    background-color: rgba(255, 255, 255, 0.90);
+    border-color: rgba(0, 0, 0, 0.14);
+  }
+  :root input:not([type="checkbox"]):not([type="radio"]):focus,
+  :root select:focus,
+  :root textarea:focus {
+    border-color: rgba(0, 0, 0, 0.35);
+    outline: none;
   }
 
   /* Typography */
@@ -178,25 +204,31 @@
   }
   
   .premium-table th {
-    @apply bg-theme-surface-secondary text-[11px] font-bold text-theme-muted uppercase tracking-wider px-6 py-4 border-b border-theme-border backdrop-blur-md;
+    @apply text-[11px] font-bold text-theme-muted uppercase tracking-wider px-6 py-4 backdrop-blur-md;
+    background: rgba(233, 234, 236, 0.80);
+    border-bottom: 1px solid #D6D8DB;
   }
   .dark .premium-table th {
     @apply backdrop-blur-none bg-[#111B2A];
+    border-bottom-color: #1E2A3A;
   }
   
   .premium-table td {
-    @apply px-6 py-4 border-b border-theme-border align-middle bg-theme-surface text-sm transition-colors duration-200 backdrop-blur-md;
+    @apply px-6 py-4 align-middle text-sm transition-colors duration-200 backdrop-blur-md;
+    background: rgba(255, 255, 255, 0.65);
+    border-bottom: 1px solid #E0E1E3;
   }
   .dark .premium-table td {
     @apply backdrop-blur-none bg-[#0D1420];
+    border-bottom-color: #1E2A3A;
   }
   
   .premium-table tr:last-child td {
-    @apply border-b-0;
+    border-bottom: none;
   }
   
   .premium-table tr:hover td {
-    @apply bg-theme-bg-secondary;
+    background: rgba(233, 234, 236, 0.90);
   }
   .dark .premium-table tr:hover td {
     @apply bg-[#111B2A];
