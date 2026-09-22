@@ -1,4 +1,4 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -65,13 +65,13 @@
     @apply bg-theme-surface rounded-[12px] border border-theme-border shadow-sm transition-all duration-300 relative overflow-hidden;
   }
   .card:hover {
-    @apply shadow-md border-theme-muted/30;
+    @apply shadow-md border-theme-muted;
   }
   
   /* Clickable Cards & Elements */
   .card.cursor-pointer:hover {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-    @apply -translate-y-[2px] border-theme-accent/30;
+    @apply -translate-y-[2px] border-theme-accent;
   }
   .dark .card.cursor-pointer:hover {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
@@ -111,7 +111,7 @@
            flex items-center justify-center gap-2;
   }
   .btn-secondary:hover {
-    @apply bg-theme-surface-secondary border-theme-muted/50 -translate-y-[1px];
+    @apply bg-theme-surface-secondary border-theme-muted -translate-y-[1px];
   }
   .btn-secondary:active {
     @apply scale-95 translate-y-[1px];
