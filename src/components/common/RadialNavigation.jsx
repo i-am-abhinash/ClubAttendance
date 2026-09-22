@@ -128,7 +128,7 @@ const RadialNavigation = () => {
               "absolute z-50 rounded-full flex items-center justify-center transition-all duration-300",
               "w-full h-full cursor-pointer",
               "bg-theme-surface border border-theme-border shadow-soft",
-              isOpen ? "scale-95 shadow-glow border-theme-text" : "hover:scale-105 hover:shadow-float hover:border-theme-text"
+              isOpen ? "scale-95 shadow-float border-theme-text" : "hover:scale-105 hover:shadow-float hover:border-theme-text"
             )}
           >
             <div className="w-[85%] h-[85%] rounded-full flex items-center justify-center overflow-hidden bg-theme-surface">
@@ -254,8 +254,8 @@ const RadialNavigation = () => {
                         "w-[38px] h-[38px] sm:w-[42px] sm:h-[42px] rounded-full flex items-center justify-center transition-all duration-[200ms] ease-out border cursor-pointer",
                         "hover:-translate-y-[3px] hover:scale-[1.08] shadow-soft",
                         isActive 
-                          ? "bg-theme-surface-elevated text-theme-text border-theme-text shadow-glow" 
-                          : "bg-theme-surface text-theme-text-secondary border-theme-border hover:border-theme-accent hover:text-theme-primary hover:bg-theme-surface-elevated shadow-glow"
+                          ? "bg-theme-surface-elevated text-theme-text border-theme-text shadow-float" 
+                          : "bg-theme-surface text-theme-text-secondary border-theme-border hover:border-theme-accent hover:text-theme-primary hover:bg-theme-surface-elevated shadow-float"
                       )}
                     >
                       <item.icon className="w-[18px] h-[18px]" />

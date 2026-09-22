@@ -89,7 +89,7 @@ const Layout = ({ children, title, description }) => {
         />
 
       {/* Top Header - Full Width */}
-      <header className="fixed top-0 left-0 right-0 h-[88px] w-full flex items-center justify-between px-6 lg:px-10 border-b border-theme-border bg-theme-surface/80 backdrop-blur-md z-30">
+      <header className="fixed top-0 left-0 right-0 h-[88px] w-full flex items-center justify-between px-6 lg:px-10 border-b border-theme-border bg-theme-surface/80 backdrop-blur-md z-50">
         
         <div className="flex-1 min-w-0 pr-4 flex items-center gap-4">
           
@@ -136,7 +136,7 @@ const Layout = ({ children, title, description }) => {
 
               {/* Search Results Dropdown */}
               {isSearchFocused && searchQuery.trim() && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-theme-surface-higher border border-theme-border-subtle rounded-xl shadow-glow overflow-hidden max-h-[400px] overflow-y-auto z-50 animate-in fade-in zoom-in-95 duration-200">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-theme-surface-higher border border-theme-border-subtle rounded-xl shadow-float overflow-hidden max-h-[400px] overflow-y-auto z-50 animate-in fade-in zoom-in-95 duration-200">
                   {searchResults.members.length === 0 && searchResults.teams.length === 0 ? (
                     <div className="p-4 text-center text-sm text-theme-text-secondary">
                       No results found for "{searchQuery}"
