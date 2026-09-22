@@ -42,7 +42,7 @@ export const IndividualAnalytics = ({ records }) => {
         dateStr: format(d, 'yyyy-MM-dd'),
         display: format(d, 'EEE'), // Mon, Tue
         status: null, // null means no session
-        color: '#1E2A3A' // default dark gray
+        color: 'var(--color-border)' // default dark gray
       });
     }
 
@@ -51,9 +51,9 @@ export const IndividualAnalytics = ({ records }) => {
       const day = days.find(d => d.dateStr === r.date);
       if (day) {
         day.status = r.status;
-        if (r.status === 'Present') day.color = '#34D399';
-        else if (r.status === 'Late') day.color = '#FBBF24';
-        else if (r.status === 'Absent') day.color = '#FB7185';
+        if (r.status === 'Present') day.color = 'var(--color-present)';
+        else if (r.status === 'Late') day.color = 'var(--color-late)';
+        else if (r.status === 'Absent') day.color = 'var(--color-absent)';
       }
     });
 
@@ -95,31 +95,31 @@ export const IndividualAnalytics = ({ records }) => {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       
       {/* Monthly Trend */}
-      <div className="card p-6 bg-gradient-to-br from-theme-surface to-[#0B111D]">
+      <div className="card p-6 bg-theme-surface">
         <h3 className="font-bold text-theme-primary mb-6">Monthly Attendance</h3>
         <div className="h-[220px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1E2A3A" />
-              <XAxis dataKey="name" tick={{fontSize: 12, fill: '#64748B'}} axisLine={false} tickLine={false} dy={10} />
-              <YAxis domain={[0, 100]} tick={{fontSize: 12, fill: '#64748B'}} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
+              <XAxis dataKey="name" tick={{fontSize: 12, fill: 'var(--color-muted)'}} axisLine={false} tickLine={false} dy={10} />
+              <YAxis domain={[0, 100]} tick={{fontSize: 12, fill: 'var(--color-muted)'}} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Line type="monotone" dataKey="rate" name="rate" stroke="#38BDF8" strokeWidth={3} dot={{r: 4, fill: '#38BDF8', strokeWidth: 2, stroke: '#0D1420'}} activeDot={{r: 6}} />
+              <Line type="monotone" dataKey="rate" name="rate" stroke="var(--color-text)" strokeWidth={3} dot={{r: 4, fill: 'var(--color-text)', strokeWidth: 2, stroke: 'var(--color-surface)'}} activeDot={{r: 6}} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       {/* Weekly Behavior */}
-      <div className="card p-6 bg-gradient-to-br from-theme-surface to-[#0B111D]">
+      <div className="card p-6 bg-theme-surface">
         <h3 className="font-bold text-theme-primary mb-6">Recent Weekly Behavior</h3>
         <div className="h-[220px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={weeklyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1E2A3A" />
-              <XAxis dataKey="display" tick={{fontSize: 12, fill: '#64748B'}} axisLine={false} tickLine={false} dy={10} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
+              <XAxis dataKey="display" tick={{fontSize: 12, fill: 'var(--color-muted)'}} axisLine={false} tickLine={false} dy={10} />
               <YAxis hide domain={[0, 1]} />
-              <Tooltip cursor={{fill: '#111B2A'}} content={<CustomWeeklyTooltip />} />
+              <Tooltip cursor={{fill: 'var(--color-surface-higher)'}} content={<CustomWeeklyTooltip />} />
               <Bar dataKey={() => 1} radius={[4, 4, 4, 4]} barSize={24}>
                 {weeklyData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />

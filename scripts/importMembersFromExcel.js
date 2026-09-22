@@ -1,4 +1,4 @@
-﻿import fs from 'fs';
+import fs from 'fs';
 import path from 'path';
 import xlsx from 'xlsx';
 import dotenv from 'dotenv';
@@ -176,13 +176,25 @@ const runImport = async () => {
       const internalEmail = `${regdNo.toLowerCase()}@mitra.local`;
       const initialPassword = regdNo;
 
+      let userRecord;
       try {
-        const userRecord = await auth.createUser({
+        userRecord = await auth.createUser({
           email: internalEmail,
           password: initialPassword,
           displayName: name,
         });
+      } catch (err) {
+        if (err.code === 'auth/email-already-exists') {
+          report.errors++;
+          report.errorDetails.push(`Email already exists for ${regdNo} (${internalEmail})`);
+        } else {
+          report.errors++;
+          report.errorDetails.push(`Failed to create Auth account for ${regdNo}: ${err.message}`);
+        }
+        continue;
+      }
 
+      try {
         await db.collection('users').doc(userRecord.uid).set({
           name,
           regdNo,
@@ -190,17 +202,18 @@ const runImport = async () => {
           teamId,
           role: 'Member',
           email: internalEmail,
-          mustChangePassword: true
+          mustChangePassword: true,
+          createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
 
         report.newMembers++;
-      } catch (err) {
-        if (err.code === 'auth/email-already-exists') {
-             report.errors++;
-             report.errorDetails.push(`Email already exists for ${regdNo} (${internalEmail})`);
-        } else {
-             report.errors++;
-             report.errorDetails.push(`Failed to create Auth account for ${regdNo}: ${err.message}`);
+      } catch (dbErr) {
+        report.errors++;
+        report.errorDetails.push(`Failed to create Firestore record for ${regdNo}: ${dbErr.message}`);
+        try {
+          await auth.deleteUser(userRecord.uid);
+        } catch (rollbackErr) {
+          report.errorDetails.push(`Failed to rollback Auth for ${regdNo}: ${rollbackErr.message}`);
         }
       }
     }

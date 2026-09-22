@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import RadialNavigation from './RadialNavigation';
-import { Search, Users, Briefcase, X, Fingerprint } from 'lucide-react';
+import { Search, Users, Briefcase, X, Fingerprint, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { fetchMembers } from '../../services/memberService';
 import { fetchTeams } from '../../services/teamService';
 
 const Layout = ({ children, title, description }) => {
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [allData, setAllData] = useState({ members: [], teams: [] });
@@ -73,28 +75,29 @@ const Layout = ({ children, title, description }) => {
     <div className="flex flex-col min-h-screen bg-theme-bg text-theme-text font-sans relative overflow-x-hidden">
       
       {/* Background Watermark */}
-      <div 
-        className="fixed inset-0 pointer-events-none z-0" 
-        style={{
-          backgroundImage: "url('/mitra-logo.jpg')",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          backgroundSize: "cover",
-          opacity: 0.03,
-          filter: "grayscale(100%) sepia(100%) hue-rotate(190deg) saturate(300%) brightness(1.2)"
-        }}
-      />
+        <div 
+          className="fixed inset-0 pointer-events-none z-0" 
+          style={{
+            backgroundImage: "url('/mitra-logo.jpg')",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            backgroundSize: "cover",
+            opacity: theme === 'dark' ? 0.03 : 0.05,
+            filter: theme === 'dark' ? 'invert(1) grayscale(100%) brightness(1.2)' : 'grayscale(100%)',
+            mixBlendMode: theme === 'dark' ? 'screen' : 'multiply'
+          }}
+        />
 
       {/* Top Header - Full Width */}
-      <header className="fixed top-0 left-0 right-0 h-[88px] w-full flex items-center justify-between px-6 lg:px-10 border-b border-theme-border bg-[#0A101A]/80 backdrop-blur-md z-30">
+      <header className="fixed top-0 left-0 right-0 h-[88px] w-full flex items-center justify-between px-6 lg:px-10 border-b border-theme-border bg-theme-surface/80 backdrop-blur-md z-30">
         
         <div className="flex-1 min-w-0 pr-4 flex items-center gap-4">
           
           <img 
             src="/mitra-logo.jpg" 
             alt="MITRA Logo" 
-            className="h-10 sm:h-12 w-auto object-contain mix-blend-screen"
-            style={{ filter: 'invert(1) grayscale(100%) brightness(1.5)' }}
+            className={`h-10 sm:h-12 w-auto object-contain ${theme === 'dark' ? 'mix-blend-screen' : 'mix-blend-multiply'}`}
+            style={{ filter: theme === 'dark' ? 'invert(1) grayscale(100%) brightness(1.5)' : 'grayscale(100%) brightness(1.1)' }}
           />
           
           <div className="flex flex-col justify-center border-l border-theme-border pl-4 ml-2">
@@ -119,7 +122,7 @@ const Layout = ({ children, title, description }) => {
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   onFocus={() => setIsSearchFocused(true)}
-                  className="w-full bg-theme-surface-elevated border border-theme-border rounded-full py-2 pl-9 pr-8 text-[13px] text-theme-text focus:outline-none focus:border-theme-accent focus:ring-1 focus:ring-theme-accent transition-all placeholder-theme-muted"
+                  className="w-full bg-theme-surface-elevated border border-theme-border rounded-full py-2 pl-9 pr-8 text-[13px] text-theme-text focus:outline-none focus:border-theme-text focus:ring-1 focus:ring-theme-text transition-all placeholder-theme-muted"
                 />
                 {searchQuery && (
                   <button 
@@ -200,14 +203,22 @@ const Layout = ({ children, title, description }) => {
             {today}
           </div>
           
+          <button 
+            onClick={toggleTheme}
+            className="w-10 h-10 rounded-full flex items-center justify-center text-theme-text-secondary hover:text-theme-text hover:bg-theme-surface-secondary transition-all"
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+          
           <div className="h-8 w-px bg-theme-border hidden sm:block"></div>
           
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
               <div className="text-[13px] font-semibold text-theme-primary">{user?.name}</div>
-              <div className="text-[11px] text-theme-cyan font-medium tracking-wide uppercase">{user?.role}</div>
+              <div className="text-[11px] text-theme-text font-medium tracking-wide uppercase">{user?.role}</div>
             </div>
-            <div className="w-10 h-10 rounded-full bg-theme-surface-higher text-theme-cyan border border-theme-border flex items-center justify-center font-bold text-sm shadow-inner">
+            <div className="w-10 h-10 rounded-full bg-theme-surface-higher text-theme-text border border-theme-border flex items-center justify-center font-bold text-sm shadow-inner">
               {user?.name?.charAt(0).toUpperCase()}
             </div>
           </div>
@@ -231,13 +242,13 @@ const Layout = ({ children, title, description }) => {
 
       {/* Quick Profile Modal */}
       {selectedMember && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0A101A]/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-theme-surface border border-theme-border rounded-2xl w-full max-w-md shadow-[0_0_40px_rgba(109,124,255,0.15)] overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-theme-surface/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-theme-surface border border-theme-border rounded-2xl w-full max-w-md shadow-float overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header / Cover */}
-            <div className="h-24 bg-gradient-to-r from-theme-accent/20 to-theme-cyan/20 relative">
+            <div className="h-24 bg-theme-surface-secondary relative">
               <button 
                 onClick={() => setSelectedMember(null)}
-                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-theme-bg/50 text-white hover:bg-theme-absent transition-colors"
+                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-theme-bg text-theme-text hover:bg-theme-absent transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -245,7 +256,7 @@ const Layout = ({ children, title, description }) => {
             
             <div className="px-6 pb-6 relative">
               {/* Avatar */}
-              <div className="w-20 h-20 rounded-2xl bg-theme-surface-higher border-[3px] border-theme-surface flex items-center justify-center text-3xl font-bold text-theme-cyan shadow-lg absolute -top-10 left-6">
+              <div className="w-20 h-20 rounded-2xl bg-theme-surface-higher border-[3px] border-theme-surface flex items-center justify-center text-3xl font-bold text-theme-text shadow-lg absolute -top-10 left-6">
                 {selectedMember.name?.charAt(0).toUpperCase()}
               </div>
 
@@ -270,7 +281,7 @@ const Layout = ({ children, title, description }) => {
                   <div className="bg-theme-bg/50 rounded-xl p-4 border border-theme-border-subtle">
                     <div className="text-[10px] font-bold uppercase tracking-wider text-theme-muted mb-1">Team Assignment</div>
                     <div className="text-sm font-semibold text-theme-primary flex items-center gap-2">
-                      <Briefcase className="w-4 h-4 text-theme-cyan" /> {getTeamName(selectedMember.teamId)}
+                      <Briefcase className="w-4 h-4 text-theme-text" /> {getTeamName(selectedMember.teamId)}
                     </div>
                   </div>
 

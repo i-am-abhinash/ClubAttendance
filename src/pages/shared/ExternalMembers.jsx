@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '../../components/common/Layout';
 import { fetchExternalMembers, updateMember } from '../../services/memberService';
 import { fetchTeams } from '../../services/teamService';
@@ -74,7 +74,7 @@ const ExternalMembers = () => {
             placeholder="Search external members..." 
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 pl-9 pr-4 text-sm focus:outline-none focus:border-theme-accent focus:ring-1 focus:ring-theme-accent shadow-soft"
+            className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 pl-9 pr-4 text-sm focus:outline-none focus:border-theme-text focus:ring-1 focus:ring-theme-text shadow-soft"
           />
         </div>
       </div>

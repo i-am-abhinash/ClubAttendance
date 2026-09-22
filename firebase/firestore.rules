@@ -29,7 +29,7 @@ service cloud.firestore {
     match /club/status {
       allow read: if true;
       allow create: if !exists(/databases/$(database)/documents/club/status) && isAdmin();
-      allow update: if isAdmin();
+      allow update: if false; // Status should just exist
       allow delete: if false;
     }
 
@@ -39,14 +39,10 @@ service cloud.firestore {
     }
     
     match /users/{userId} {
-      // Admin: read all
-      // Team Leader: read self, own team, and external members (teamId == null)
-      // Member: read self (added: teamId check if they are in the same team? The prompt says: "can only access their own attendance/analytics")
       allow read: if isAdmin()
                   || (isLeader() && (!("teamId" in resource.data) || resource.data.teamId == userTeamId() || resource.data.teamId == null || userId == request.auth.uid))
                   || (isAuthenticated() && userId == request.auth.uid);
       
-      // Creating Admin is ONLY allowed if club/status doesn't exist and user is uninitialized
       allow create: if (isAdmin() && request.resource.data.role != 'Admin') 
                     || (!exists(/databases/$(database)/documents/club/status) 
                         && request.resource.data.role == 'Admin' 
@@ -56,17 +52,20 @@ service cloud.firestore {
       allow delete: if isAdmin() && resource.data.role != 'Admin';
       
       allow update: if 
-        // Self-update for anyone (can only change mustChangePassword)
         (isAuthenticated() && request.auth.uid == userId 
           && request.resource.data.role == resource.data.role 
           && request.resource.data.teamId == resource.data.teamId
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mustChangePassword'])
+          && (
+            (resource.data.role == 'Admin' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'email', 'mustChangePassword', 'updatedAt']))
+            || (resource.data.role != 'Admin' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['mustChangePassword']))
+          )
         )
         || 
-        // Admin updating someone else (cannot change them to Admin, cannot demote Admin)
-        (isAdmin() && request.auth.uid != userId && request.resource.data.role != 'Admin' && resource.data.role != 'Admin')
+        (isAdmin() && request.auth.uid != userId 
+          && resource.data.role != 'Admin' 
+          && (request.resource.data.role == 'Member' || request.resource.data.role == 'Team Leader')
+        )
         ||
-        // Team Leader managing team membership (only Members, only own team)
         (isLeader() 
           && resource.data.role == 'Member'
           && request.resource.data.role == 'Member'
@@ -80,7 +79,6 @@ service cloud.firestore {
                   || (isLeader() && resource.data.teamId == userTeamId())
                   || (isAuthenticated() && resource.data.userId == request.auth.uid);
       
-      // ONLY Admin can create or update attendance.
       allow create, update, delete: if isAdmin();
     }
   
@@ -158,32 +156,49 @@ service cloud.firestore {
 
     match /objectives/{objectiveId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == request.resource.data.teamId));
+      allow create: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == request.resource.data.teamId));
+      allow update: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == resource.data.teamId && userTeamId() == request.resource.data.teamId));
+      allow delete: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == resource.data.teamId));
     }
     match /constraints/{constraintId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == request.resource.data.teamId));
+      allow create: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == request.resource.data.teamId));
+      allow update: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == resource.data.teamId && userTeamId() == request.resource.data.teamId));
+      allow delete: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == resource.data.teamId));
     }
     match /tasks/{taskId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == request.resource.data.teamId));
+      allow create: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == request.resource.data.teamId));
+      allow update: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == resource.data.teamId && userTeamId() == request.resource.data.teamId));
+      allow delete: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == resource.data.teamId));
     }
     match /task_assignments/{assignmentId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && (
+      allow create: if isAuthenticated() && (
         isAdmin() || 
-        (isLeader() && userTeamId() == request.resource.data.teamId) ||
+        (isLeader() && userTeamId() == request.resource.data.teamId)
+      );
+      allow update: if isAuthenticated() && (
+        isAdmin() || 
+        (isLeader() && userTeamId() == resource.data.teamId && userTeamId() == request.resource.data.teamId) ||
         (request.auth.uid == resource.data.memberId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'completedAt']))
+      );
+      allow delete: if isAuthenticated() && (
+        isAdmin() || 
+        (isLeader() && userTeamId() == resource.data.teamId)
       );
     }
     match /projects/{projectId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == request.resource.data.teamId));
+      allow create: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == request.resource.data.teamId));
+      allow update: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == resource.data.teamId && userTeamId() == request.resource.data.teamId));
+      allow delete: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == resource.data.teamId));
     }
     match /project_milestones/{milestoneId} {
       allow read: if isAuthenticated();
-      // Only Leaders of the team and Admins manage milestones
-      allow write: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == request.resource.data.teamId));
+      allow create: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == request.resource.data.teamId));
+      allow update: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == resource.data.teamId && userTeamId() == request.resource.data.teamId));
+      allow delete: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == resource.data.teamId));
     }
 
     // =========================================================================
@@ -196,10 +211,19 @@ service cloud.firestore {
         (isLeader() && userTeamId() == resource.data.teamId) ||
         request.auth.uid == resource.data.memberId
       );
-      allow write: if isAuthenticated() && (
+      allow create: if isAuthenticated() && (
         isAdmin() || 
         (isLeader() && userTeamId() == request.resource.data.teamId) ||
         (request.auth.uid == request.resource.data.memberId && request.resource.data.teamId == userTeamId())
+      );
+      allow update: if isAuthenticated() && (
+        isAdmin() || 
+        (isLeader() && userTeamId() == resource.data.teamId && userTeamId() == request.resource.data.teamId) ||
+        (request.auth.uid == request.resource.data.memberId && request.resource.data.teamId == userTeamId() && resource.data.teamId == userTeamId())
+      );
+      allow delete: if isAuthenticated() && (
+        isAdmin() || 
+        (isLeader() && userTeamId() == resource.data.teamId)
       );
     }
 
@@ -214,8 +238,9 @@ service cloud.firestore {
         (isLeader() && userTeamId() == get(/databases/$(database)/documents/project_submissions/$(resource.data.submissionId)).data.teamId) ||
         request.auth.uid == get(/databases/$(database)/documents/project_submissions/$(resource.data.submissionId)).data.memberId
       );
-      allow write: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == get(/databases/$(database)/documents/project_submissions/$(request.resource.data.submissionId)).data.teamId));
-      allow update: if isAdmin() || (isLeader() && userTeamId() == get(/databases/$(database)/documents/project_submissions/$(resource.data.submissionId)).data.teamId);
+      allow create: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == get(/databases/$(database)/documents/project_submissions/$(request.resource.data.submissionId)).data.teamId));
+      allow update: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == get(/databases/$(database)/documents/project_submissions/$(resource.data.submissionId)).data.teamId && userTeamId() == get(/databases/$(database)/documents/project_submissions/$(request.resource.data.submissionId)).data.teamId));
+      allow delete: if isAuthenticated() && (isAdmin() || (isLeader() && userTeamId() == get(/databases/$(database)/documents/project_submissions/$(resource.data.submissionId)).data.teamId));
     }
 
     // =========================================================================

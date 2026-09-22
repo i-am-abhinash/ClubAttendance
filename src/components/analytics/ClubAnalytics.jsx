@@ -33,9 +33,9 @@ export const ClubAnalytics = ({ records, teams }) => {
       if (r.status === 'Absent') a++;
     });
     return [
-      { name: 'Present', value: p, color: '#34D399' },
-      { name: 'Late', value: l, color: '#FBBF24' },
-      { name: 'Absent', value: a, color: '#FB7185' }
+      { name: 'Present', value: p, color: 'var(--color-present)' },
+      { name: 'Late', value: l, color: 'var(--color-late)' },
+      { name: 'Absent', value: a, color: 'var(--color-absent)' }
     ].filter(d => d.value > 0);
   }, [records]);
 
@@ -88,29 +88,29 @@ export const ClubAnalytics = ({ records, teams }) => {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
       {/* Attendance Trend */}
-      <div className="card p-6 lg:col-span-2 flex flex-col bg-gradient-to-br from-theme-surface to-[#0B111D]">
+      <div className="card p-6 lg:col-span-2 flex flex-col bg-theme-surface">
         <h3 className="font-bold text-theme-primary mb-6">Attendance Trend</h3>
         <div className="flex-1 min-h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={trendData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#38BDF8" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#38BDF8" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="var(--color-text)" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="var(--color-text)" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1E2A3A" />
-              <XAxis dataKey="date" tick={{fontSize: 12, fill: '#64748B'}} axisLine={false} tickLine={false} dy={10} />
-              <YAxis tick={{fontSize: 12, fill: '#64748B'}} axisLine={false} tickLine={false} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
+              <XAxis dataKey="date" tick={{fontSize: 12, fill: 'var(--color-muted)'}} axisLine={false} tickLine={false} dy={10} />
+              <YAxis tick={{fontSize: 12, fill: 'var(--color-muted)'}} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="rate" name="Attendance" stroke="#38BDF8" strokeWidth={3} fillOpacity={1} fill="url(#colorRate)" />
+              <Area type="monotone" dataKey="rate" name="Attendance" stroke="var(--color-text)" strokeWidth={3} fillOpacity={1} fill="url(#colorRate)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       {/* Distribution Donut */}
-      <div className="card p-6 flex flex-col items-center justify-center relative bg-gradient-to-br from-theme-surface to-[#0B111D]">
+      <div className="card p-6 flex flex-col items-center justify-center relative bg-theme-surface">
         <h3 className="font-bold text-theme-primary mb-2 self-start w-full">Distribution</h3>
         <div className="w-full flex-1 min-h-[200px] relative flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
@@ -146,16 +146,16 @@ export const ClubAnalytics = ({ records, teams }) => {
       </div>
 
       {/* Team Performance */}
-      <div className="card p-6 lg:col-span-3 bg-gradient-to-br from-theme-surface to-[#0B111D]">
+      <div className="card p-6 lg:col-span-3 bg-theme-surface">
         <h3 className="font-bold text-theme-primary mb-6">Team Performance</h3>
         <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={teamData} layout="vertical" margin={{ top: 0, right: 30, left: 20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#1E2A3A" />
-              <XAxis type="number" domain={[0, 100]} tick={{fontSize: 12, fill: '#64748B'}} axisLine={false} tickLine={false} />
-              <YAxis dataKey="name" type="category" tick={{fontSize: 12, fill: '#94A3B8', fontWeight: 500}} axisLine={false} tickLine={false} width={100} />
-              <Tooltip cursor={{fill: '#111B2A'}} content={<CustomTooltip />} />
-              <Bar dataKey="rate" name="Attendance" fill="#6D7CFF" radius={[0, 4, 4, 0]} barSize={24} />
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--color-border)" />
+              <XAxis type="number" domain={[0, 100]} tick={{fontSize: 12, fill: 'var(--color-muted)'}} axisLine={false} tickLine={false} />
+              <YAxis dataKey="name" type="category" tick={{fontSize: 12, fill: 'var(--color-text-secondary)', fontWeight: 500}} axisLine={false} tickLine={false} width={100} />
+              <Tooltip cursor={{fill: 'var(--color-surface-higher)'}} content={<CustomTooltip />} />
+              <Bar dataKey="rate" name="Attendance" fill="var(--color-text)" radius={[0, 4, 4, 0]} barSize={24} />
             </BarChart>
           </ResponsiveContainer>
         </div>

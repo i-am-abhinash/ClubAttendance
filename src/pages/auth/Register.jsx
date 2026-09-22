@@ -67,8 +67,8 @@ const Register = () => {
     <div className="flex min-h-screen flex-1 flex-col justify-center px-6 py-12 lg:px-8 bg-theme-bg font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
         <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-theme-accent mx-auto mb-6 shadow-sm">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 22H22L12 2Z" fill="white"/>
+          <svg className="text-theme-bg" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L2 22H22L12 2Z" fill="currentColor"/>
           </svg>
         </div>
         <h2 className="text-center text-2xl font-bold leading-9 tracking-tight text-theme-primary">
@@ -84,7 +84,7 @@ const Register = () => {
               <div className="bg-theme-absent-bg text-theme-absent p-4 rounded-xl mb-6 border border-theme-absent/20 text-sm">
                 <strong>Connection Error:</strong> {initError}
               </div>
-              <button onClick={() => window.location.reload()} className="flex w-full justify-center rounded-lg bg-theme-accent px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-theme-accent-hover">
+              <button onClick={() => window.location.reload()} className="flex w-full justify-center rounded-lg bg-theme-accent px-3 py-2 text-sm font-semibold text-theme-bg transition-colors hover:bg-theme-accent-hover">
                 Retry Connection
               </button>
             </div>
@@ -93,7 +93,7 @@ const Register = () => {
               <div className="bg-theme-late-bg text-theme-late p-4 rounded-xl mb-6 border border-theme-late/20 text-sm font-medium">
                 Registration is currently unavailable. Please contact the club administrator.
               </div>
-              <Link to="/login" className="flex w-full justify-center rounded-lg bg-theme-accent px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-theme-accent-hover">
+              <Link to="/login" className="flex w-full justify-center rounded-lg bg-theme-accent px-3 py-2 text-sm font-semibold text-theme-bg transition-colors hover:bg-theme-accent-hover">
                 Return to Login
               </Link>
             </div>
@@ -109,26 +109,26 @@ const Register = () => {
                 <div>
                   <label className="block text-sm font-medium leading-6 text-theme-text">Full Name</label>
                   <div className="mt-2">
-                    <input required type="text" className="block w-full rounded-lg border-0 py-2 text-theme-text shadow-sm ring-1 ring-inset ring-theme-border-subtle focus:ring-2 focus:ring-inset focus:ring-theme-accent sm:text-sm sm:leading-6 px-3" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                    <input required type="text" className="block w-full rounded-lg border-0 py-2 text-theme-text shadow-sm ring-1 ring-inset ring-theme-border-subtle focus:ring-2 focus:ring-inset focus:ring-theme-text sm:text-sm sm:leading-6 px-3" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium leading-6 text-theme-text">Email address</label>
                   <div className="mt-2">
-                    <input required type="email" className="block w-full rounded-lg border-0 py-2 text-theme-text shadow-sm ring-1 ring-inset ring-theme-border-subtle focus:ring-2 focus:ring-inset focus:ring-theme-accent sm:text-sm sm:leading-6 px-3" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                    <input required type="email" className="block w-full rounded-lg border-0 py-2 text-theme-text shadow-sm ring-1 ring-inset ring-theme-border-subtle focus:ring-2 focus:ring-inset focus:ring-theme-text sm:text-sm sm:leading-6 px-3" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium leading-6 text-theme-text">Password</label>
                   <div className="mt-2">
-                    <input required type="password" minLength="6" className="block w-full rounded-lg border-0 py-2 text-theme-text shadow-sm ring-1 ring-inset ring-theme-border-subtle focus:ring-2 focus:ring-inset focus:ring-theme-accent sm:text-sm sm:leading-6 px-3" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+                    <input required type="password" minLength="6" className="block w-full rounded-lg border-0 py-2 text-theme-text shadow-sm ring-1 ring-inset ring-theme-border-subtle focus:ring-2 focus:ring-inset focus:ring-theme-text sm:text-sm sm:leading-6 px-3" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
                   </div>
                 </div>
 
                 <div className="pt-2">
-                  <button disabled={loading} type="submit" className="flex w-full justify-center rounded-lg bg-theme-accent px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-theme-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-primary transition-colors disabled:opacity-50">
+                  <button disabled={loading} type="submit" className="flex w-full justify-center rounded-lg bg-theme-accent px-3 py-2.5 text-sm font-semibold text-theme-bg shadow-sm hover:bg-theme-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-primary transition-colors disabled:opacity-50">
                     {loading ? 'Registering...' : 'Register as Admin'}
                   </button>
                 </div>

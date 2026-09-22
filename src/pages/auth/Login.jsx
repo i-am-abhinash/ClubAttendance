@@ -43,8 +43,8 @@ const Login = () => {
     <div className="flex min-h-screen flex-1 flex-col justify-center px-6 py-12 lg:px-8 bg-theme-bg font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
         <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-theme-accent mx-auto mb-6 shadow-sm">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 22H22L12 2Z" fill="white"/>
+          <svg className="text-theme-bg" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L2 22H22L12 2Z" fill="currentColor"/>
           </svg>
         </div>
         <h2 className="text-center text-2xl font-bold leading-9 tracking-tight text-theme-primary">
@@ -75,7 +75,7 @@ const Login = () => {
                   required
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="block w-full rounded-lg border-0 py-2 text-theme-text shadow-sm ring-1 ring-inset ring-theme-border-subtle focus:ring-2 focus:ring-inset focus:ring-theme-accent sm:text-sm sm:leading-6 px-3 transition-shadow"
+                  className="block w-full rounded-lg border-0 py-2 text-theme-text shadow-sm ring-1 ring-inset ring-theme-border-subtle focus:ring-2 focus:ring-inset focus:ring-theme-text sm:text-sm sm:leading-6 px-3 transition-shadow"
                 />
               </div>
             </div>
@@ -93,7 +93,7 @@ const Login = () => {
                   required
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="block w-full rounded-lg border-0 py-2 text-theme-text shadow-sm ring-1 ring-inset ring-theme-border-subtle focus:ring-2 focus:ring-inset focus:ring-theme-accent sm:text-sm sm:leading-6 px-3 transition-shadow"
+                  className="block w-full rounded-lg border-0 py-2 text-theme-text shadow-sm ring-1 ring-inset ring-theme-border-subtle focus:ring-2 focus:ring-inset focus:ring-theme-text sm:text-sm sm:leading-6 px-3 transition-shadow"
                 />
               </div>
             </div>
@@ -102,7 +102,7 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex w-full justify-center rounded-lg bg-theme-accent px-3 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-theme-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-primary transition-colors disabled:opacity-50"
+                className="flex w-full justify-center rounded-lg bg-theme-accent px-3 py-2.5 text-sm font-semibold text-theme-bg shadow-sm hover:bg-theme-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-primary transition-colors disabled:opacity-50"
               >
                 {loading ? 'Signing in...' : 'Sign in'}
               </button>

@@ -65,14 +65,14 @@ const FilterBar = ({ filters, setFilters, availableTeams = [] }) => {
           <div className="flex items-center gap-2 text-sm text-theme-text-secondary flex-wrap">
             <input 
               type="date" 
-              className="bg-theme-bg border border-theme-border rounded-lg px-2 py-1.5 focus:outline-none focus:border-theme-cyan"
+              className="bg-theme-bg border border-theme-border rounded-lg px-2 py-1.5 focus:outline-none focus:border-theme-text"
               value={filters.customStart || ''}
               onChange={e => setFilters({ ...filters, customStart: e.target.value })}
             />
             <span className="text-xs">to</span>
             <input 
               type="date" 
-              className="bg-theme-bg border border-theme-border rounded-lg px-2 py-1.5 focus:outline-none focus:border-theme-cyan"
+              className="bg-theme-bg border border-theme-border rounded-lg px-2 py-1.5 focus:outline-none focus:border-theme-text"
               value={filters.customEnd || ''}
               onChange={e => setFilters({ ...filters, customEnd: e.target.value })}
             />
@@ -112,7 +112,7 @@ const FilterBar = ({ filters, setFilters, availableTeams = [] }) => {
       {/* Reset Button */}
       <button 
         onClick={resetFilters}
-        className="p-2 mr-1 text-theme-muted hover:text-theme-cyan hover:bg-theme-cyan/10 rounded-lg transition-colors flex items-center justify-center border border-transparent hover:border-theme-cyan/20"
+        className="p-2 mr-1 text-theme-muted hover:text-theme-text hover:bg-theme-surface-secondary rounded-lg transition-colors flex items-center justify-center border border-transparent hover:border-theme-border"
         title="Reset Filters"
       >
         <RotateCcw className="w-4 h-4" />

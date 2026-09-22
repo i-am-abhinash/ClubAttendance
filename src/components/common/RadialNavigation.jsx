@@ -6,8 +6,10 @@ import {
   CalendarCheck, UserMinus, UserPlus
 } from 'lucide-react';
 import clsx from 'clsx';
+import { useTheme } from '../../context/ThemeContext';
 
 const RadialNavigation = () => {
+  const { theme } = useTheme();
   const { isAdmin, isLeader, isMember, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -109,7 +111,7 @@ const RadialNavigation = () => {
       <div 
         className={clsx(
           "fixed inset-0 z-40 transition-all duration-300 pointer-events-none",
-          isOpen ? "bg-[#070B12]/40 backdrop-blur-[2px] opacity-100 pointer-events-auto" : "opacity-0"
+          isOpen ? "bg-theme-bg/60 backdrop-blur-[2px] opacity-100 pointer-events-auto" : "opacity-0"
         )}
       />
 
@@ -125,16 +127,16 @@ const RadialNavigation = () => {
             className={clsx(
               "absolute z-50 rounded-full flex items-center justify-center transition-all duration-300",
               "w-full h-full cursor-pointer",
-              "bg-[#0A101A] border border-[#1E2A3A] shadow-[0_0_20px_rgba(109,124,255,0.15)]",
-              isOpen ? "scale-95 shadow-[0_0_25px_rgba(109,124,255,0.3)] border-theme-accent/50" : "hover:scale-105 hover:shadow-[0_0_25px_rgba(56,189,248,0.3)] hover:border-theme-cyan/50"
+              "bg-theme-surface border border-theme-border shadow-soft",
+              isOpen ? "scale-95 shadow-glow border-theme-text" : "hover:scale-105 hover:shadow-float hover:border-theme-text"
             )}
           >
-            <div className="w-[85%] h-[85%] rounded-full flex items-center justify-center overflow-hidden bg-[#0A101A]">
+            <div className="w-[85%] h-[85%] rounded-full flex items-center justify-center overflow-hidden bg-theme-surface">
                <img 
                 src="/mitra-logo.jpg" 
                 alt="MITRA" 
-                className="w-[70%] h-[70%] object-contain mix-blend-screen"
-                style={{ filter: 'invert(1) grayscale(100%) brightness(1.5)' }}
+                className={`w-[70%] h-[70%] object-contain ${theme === 'dark' ? 'mix-blend-screen' : 'mix-blend-multiply'}`}
+                style={{ filter: theme === 'dark' ? 'invert(1) grayscale(100%) brightness(1.5)' : 'grayscale(100%) brightness(1.1)' }}
               />
             </div>
           </div>
@@ -153,7 +155,7 @@ const RadialNavigation = () => {
               <path 
                 d={d}
                 fill="none" 
-                stroke="#1E2A3A" 
+                stroke="var(--color-border)" 
                 strokeWidth="1.5" 
                 strokeOpacity="0.8"
               />
@@ -169,10 +171,10 @@ const RadialNavigation = () => {
                     cx={cx} 
                     cy={cy} 
                     r="3.5" 
-                    fill={isActive ? "#38BDF8" : "#162235"} 
-                    stroke={isActive ? "#38BDF8" : "#1E2A3A"} 
+                    fill={isActive ? "var(--color-text)" : "var(--color-surface-higher)"} 
+                    stroke={isActive ? "var(--color-text)" : "var(--color-border)"} 
                     strokeWidth="1.5"
-                    style={{ filter: isActive ? 'drop-shadow(0 0 6px rgba(56,189,248,0.8))' : 'none' }}
+                    style={{ filter: isActive ? 'drop-shadow(0 0 6px var(--color-text))' : 'none' }}
                   />
                 );
               })}
@@ -216,7 +218,7 @@ const RadialNavigation = () => {
                         className={clsx(
                           "w-[38px] h-[38px] sm:w-[42px] sm:h-[42px] rounded-full flex items-center justify-center transition-all duration-[200ms] ease-out border cursor-pointer",
                           "hover:-translate-y-[3px] hover:scale-[1.08]",
-                          "bg-theme-surface text-theme-absent border-theme-border hover:border-theme-absent hover:bg-theme-surface-elevated hover:shadow-[0_8px_20px_rgba(251,113,133,0.2)] shadow-soft"
+                          "bg-theme-surface text-theme-text border-theme-border hover:border-theme-text hover:bg-theme-surface-elevated hover:shadow-float shadow-soft"
                         )}
                       >
                         <item.icon className="w-[18px] h-[18px]" />
@@ -226,7 +228,7 @@ const RadialNavigation = () => {
                         className={clsx(
                           "absolute left-[calc(100%+12px)] top-1/2 px-3 py-1.5 rounded-lg bg-theme-surface-elevated border border-theme-border shadow-float text-[12px] sm:text-[13px] font-medium whitespace-nowrap transition-all duration-200 pointer-events-none text-left tracking-wide",
                           "opacity-0 -translate-x-2 -translate-y-1/2 group-hover:opacity-100 group-hover:translate-x-0 group-hover:-translate-y-[calc(50%+3px)]",
-                          "text-theme-absent font-semibold"
+                          "text-theme-text font-semibold"
                         )}
                       >
                         {item.label}
@@ -252,8 +254,8 @@ const RadialNavigation = () => {
                         "w-[38px] h-[38px] sm:w-[42px] sm:h-[42px] rounded-full flex items-center justify-center transition-all duration-[200ms] ease-out border cursor-pointer",
                         "hover:-translate-y-[3px] hover:scale-[1.08] shadow-soft",
                         isActive 
-                          ? "bg-theme-surface-elevated text-theme-cyan border-theme-cyan shadow-[0_8px_20px_rgba(56,189,248,0.25)]" 
-                          : "bg-theme-surface text-theme-text-secondary border-theme-border hover:border-theme-accent hover:text-theme-primary hover:bg-theme-surface-elevated hover:shadow-[0_8px_20px_rgba(109,124,255,0.15)]"
+                          ? "bg-theme-surface-elevated text-theme-text border-theme-text shadow-glow" 
+                          : "bg-theme-surface text-theme-text-secondary border-theme-border hover:border-theme-accent hover:text-theme-primary hover:bg-theme-surface-elevated shadow-glow"
                       )}
                     >
                       <item.icon className="w-[18px] h-[18px]" />
@@ -263,7 +265,7 @@ const RadialNavigation = () => {
                       className={clsx(
                         "absolute left-[calc(100%+12px)] top-1/2 px-3 py-1.5 rounded-lg bg-theme-surface-elevated border border-theme-border shadow-float text-[12px] sm:text-[13px] font-medium whitespace-nowrap transition-all duration-200 pointer-events-none text-left tracking-wide",
                         "opacity-0 -translate-x-2 -translate-y-1/2 group-hover:opacity-100 group-hover:translate-x-0 group-hover:-translate-y-[calc(50%+3px)]",
-                        isActive ? "text-theme-cyan font-bold" : "text-theme-text font-medium"
+                        isActive ? "text-theme-text font-bold" : "text-theme-text font-medium"
                       )}
                     >
                       {item.label}

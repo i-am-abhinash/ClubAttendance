@@ -137,7 +137,7 @@ const ManageMembers = () => {
             <input 
               type="text" 
               placeholder="Search directory..." 
-              className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 px-4 text-sm text-theme-text focus:outline-none focus:border-theme-accent"
+              className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 px-4 text-sm text-theme-text focus:outline-none focus:border-theme-text"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -156,15 +156,15 @@ const ManageMembers = () => {
           <form onSubmit={handleCreate} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-theme-text mb-1">Full Name</label>
-              <input required type="text" className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 px-3 text-sm text-theme-text focus:outline-none focus:border-theme-accent" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+              <input required type="text" className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 px-3 text-sm text-theme-text focus:outline-none focus:border-theme-text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
             </div>
             <div>
               <label className="block text-sm font-medium text-theme-text mb-1">Email</label>
-              <input required type="email" className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 px-3 text-sm text-theme-text focus:outline-none focus:border-theme-accent" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+              <input required type="email" className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 px-3 text-sm text-theme-text focus:outline-none focus:border-theme-text" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
             </div>
             <div>
               <label className="block text-sm font-medium text-theme-text mb-1">Temporary Password</label>
-              <input required type="password" minLength={6} className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 px-3 text-sm text-theme-text focus:outline-none focus:border-theme-accent" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+              <input required type="password" minLength={6} className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 px-3 text-sm text-theme-text focus:outline-none focus:border-theme-text" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
             </div>
             <div>
               <label className="block text-sm font-medium text-theme-text mb-1">Role</label>
@@ -224,7 +224,7 @@ const ManageMembers = () => {
                     >
                       <td>
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-theme-surface-elevated flex items-center justify-center text-theme-cyan font-bold text-sm border border-theme-border group-hover:border-theme-accent/50 transition-colors">
+                          <div className="w-9 h-9 rounded-full bg-theme-surface-elevated flex items-center justify-center text-theme-text font-bold text-sm border border-theme-border group-hover:border-theme-accent/50 transition-colors">
                             {member.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
@@ -236,7 +236,7 @@ const ManageMembers = () => {
                       <td>
                         <span className={`text-[10px] uppercase tracking-wide font-bold px-2 py-1 rounded-md ${
                           member.role === 'Admin' ? 'bg-theme-accent/20 text-theme-accent' : 
-                          member.role === 'Team Leader' ? 'bg-theme-cyan/20 text-theme-cyan' : 
+                          member.role === 'Team Leader' ? 'bg-theme-surface-secondary text-theme-text' : 
                           'bg-theme-surface-higher text-theme-text-secondary'
                         }`}>
                           {member.role}
@@ -268,12 +268,12 @@ const ManageMembers = () => {
 
       {/* Member Analytics & Management Modal */}
       {selectedMember && (
-        <div className="fixed inset-0 bg-[#070B12]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-theme-bg/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-theme-surface border border-theme-border w-full max-w-4xl rounded-2xl shadow-nav overflow-hidden flex flex-col max-h-[90vh]">
             
             <div className="p-6 border-b border-theme-border flex justify-between items-start shrink-0 bg-theme-surface-elevated">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-theme-surface flex items-center justify-center text-theme-cyan font-bold text-xl border-2 border-theme-border">
+                <div className="w-14 h-14 rounded-full bg-theme-surface flex items-center justify-center text-theme-text font-bold text-xl border-2 border-theme-border">
                   {selectedMember.name.charAt(0).toUpperCase()}
                 </div>
                 <div>

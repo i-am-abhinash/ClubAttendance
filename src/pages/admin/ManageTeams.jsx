@@ -89,7 +89,7 @@ const ManageTeams = () => {
               <input 
                 type="text" 
                 required
-                className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 px-3 text-sm text-theme-text focus:outline-none focus:border-theme-accent placeholder-theme-muted"
+                className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 px-3 text-sm text-theme-text focus:outline-none focus:border-theme-text placeholder-theme-muted"
                 value={newTeamName}
                 onChange={e => setNewTeamName(e.target.value)}
                 placeholder="e.g. AI Research Group"

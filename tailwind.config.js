@@ -1,5 +1,6 @@
 ﻿/** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -11,36 +12,33 @@ export default {
       },
       colors: {
         theme: {
-          bg: '#070B12',
-          surface: '#0D1420',
-          'surface-elevated': '#111B2A',
-          'surface-higher': '#162235',
-          primary: '#F1F5F9',
-          accent: '#6D7CFF',
-          'accent-hover': '#8190FF',
-          'accent-light': 'rgba(109, 124, 255, 0.1)',
-          cyan: '#38BDF8',
-          text: '#F1F5F9',
-          'text-secondary': '#94A3B8',
-          muted: '#64748B',
-          border: '#1E2A3A',
-          'border-subtle': '#162131',
+          bg: 'var(--color-bg)',
+          'bg-secondary': 'var(--color-bg-secondary)',
+          surface: 'var(--color-surface)',
+          'surface-secondary': 'var(--color-surface-secondary)',
+          border: 'var(--color-border)',
           
-          present: '#34D399',
-          'present-bg': 'rgba(52, 211, 153, 0.1)',
+          text: 'var(--color-text)',
+          'text-secondary': 'var(--color-text-secondary)',
+          muted: 'var(--color-muted)',
           
-          absent: '#FB7185',
-          'absent-bg': 'rgba(251, 113, 133, 0.1)',
+          accent: 'var(--color-accent)',
+          button: 'var(--color-button)',
+          'button-text': 'var(--color-button-text)',
           
-          late: '#FBBF24',
-          'late-bg': 'rgba(251, 191, 36, 0.1)',
+          present: 'var(--color-present)',
+          'present-bg': 'var(--color-present-bg)',
+          absent: 'var(--color-absent)',
+          'absent-bg': 'var(--color-absent-bg)',
+          late: 'var(--color-late)',
+          'late-bg': 'var(--color-late-bg)',
         }
       },
       boxShadow: {
-        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.3)',
-        'float': '0 8px 30px rgba(0, 0, 0, 0.4)',
-        'nav': '0 0 40px rgba(0, 0, 0, 0.5)',
-        'glow': '0 0 15px rgba(109, 124, 255, 0.2)',
+        'sm': '0 1px 3px rgba(0,0,0,0.05)',
+        'md': '0 4px 12px rgba(0,0,0,0.08)',
+        'float': '0 10px 25px rgba(0, 0, 0, 0.1)',
+        'nav': '0 0 40px rgba(0, 0, 0, 0.05)',
       }
     },
   },

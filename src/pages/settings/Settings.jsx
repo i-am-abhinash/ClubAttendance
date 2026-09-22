@@ -96,7 +96,7 @@ const Settings = () => {
                 <input 
                   type="password" 
                   required
-                  className="w-full border border-theme-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-theme-accent"
+                  className="w-full border border-theme-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-theme-text"
                   value={currentPassword}
                   onChange={e => setCurrentPassword(e.target.value)}
                 />
@@ -107,7 +107,7 @@ const Settings = () => {
                 <input 
                   type="password" 
                   required
-                  className="w-full border border-theme-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-theme-accent"
+                  className="w-full border border-theme-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-theme-text"
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
                 />
@@ -118,7 +118,7 @@ const Settings = () => {
                 <input 
                   type="password" 
                   required
-                  className="w-full border border-theme-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-theme-accent"
+                  className="w-full border border-theme-border rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-theme-text"
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
                 />

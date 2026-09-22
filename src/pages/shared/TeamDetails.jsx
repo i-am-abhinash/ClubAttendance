@@ -202,7 +202,7 @@ const TeamDetails = () => {
           <div className="card p-6 bg-gradient-to-br from-theme-surface to-[#0B111D]">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-theme-muted uppercase tracking-wider">Members</h3>
-              <Users className="w-5 h-5 text-theme-cyan" />
+              <Users className="w-5 h-5 text-theme-text" />
             </div>
             <div className="text-3xl font-bold text-theme-primary drop-shadow-sm">{members.length}</div>
           </div>
@@ -254,7 +254,7 @@ const TeamDetails = () => {
                   <tr key={member.id}>
                     <td>
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-theme-surface-higher flex items-center justify-center font-bold text-xs text-theme-cyan border border-theme-border shadow-inner">
+                        <div className="w-8 h-8 rounded-full bg-theme-surface-higher flex items-center justify-center font-bold text-xs text-theme-text border border-theme-border shadow-inner">
                           {member.name.charAt(0).toUpperCase()}
                         </div>
                         <span className="font-medium text-theme-primary">{member.name}</span>
@@ -264,7 +264,7 @@ const TeamDetails = () => {
                     <td>
                       <span className={clsx(
                         "text-[10px] uppercase font-bold tracking-wide px-2 py-1 rounded-md",
-                        member.role === 'Team Leader' ? "bg-theme-cyan/20 text-theme-cyan" : "bg-theme-surface-higher text-theme-text-secondary"
+                        member.role === 'Team Leader' ? "bg-theme-surface-secondary text-theme-text" : "bg-theme-surface-higher text-theme-text-secondary"
                       )}>
                         {member.role}
                       </span>
@@ -311,7 +311,7 @@ const TeamDetails = () => {
               <div className="flex-1 md:w-48">
                 <input 
                   type="date" 
-                  className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 px-3 text-sm text-theme-text focus:outline-none focus:border-theme-accent shadow-inner [color-scheme:dark]"
+                  className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 px-3 text-sm text-theme-text focus:outline-none focus:border-theme-text shadow-inner [color-scheme:dark]"
                   value={date}
                   onChange={e => setDate(e.target.value)}
                 />
@@ -321,7 +321,7 @@ const TeamDetails = () => {
                 <input 
                   type="text" 
                   placeholder="Search members..." 
-                  className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 pl-9 pr-3 text-sm text-theme-text focus:outline-none focus:border-theme-accent shadow-inner placeholder-theme-muted"
+                  className="w-full bg-theme-surface border border-theme-border rounded-lg py-2 pl-9 pr-3 text-sm text-theme-text focus:outline-none focus:border-theme-text shadow-inner placeholder-theme-muted"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                 />
@@ -372,7 +372,7 @@ const TeamDetails = () => {
                       <tr key={member.id} className={clsx(record?._optimistic && "opacity-60")}>
                         <td>
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-theme-surface-higher flex items-center justify-center font-bold text-xs text-theme-cyan border border-theme-border">
+                            <div className="w-8 h-8 rounded-full bg-theme-surface-higher flex items-center justify-center font-bold text-xs text-theme-text border border-theme-border">
                               {member.name.charAt(0).toUpperCase()}
                             </div>
                             <span className="font-medium text-theme-primary">{member.name}</span>

@@ -77,19 +77,19 @@ const LeaderDashboard = () => {
         <StatCard 
           title="Attendance Rate" 
           value={`${stats.percentage}%`} 
-          subtitle="All-time average" 
+          subtitle="Last 30 Days" 
           icon={TrendingUp} 
         />
         <StatCard 
           title="Present Sessions" 
           value={stats.present} 
-          subtitle="All-time total" 
+          subtitle="Last 30 Days" 
           icon={Calendar} 
         />
         <StatCard 
           title="Total Logged" 
           value={stats.totalRecords} 
-          subtitle="All-time total records" 
+          subtitle="Last 30 Days" 
           icon={Calendar} 
         />
       </div>

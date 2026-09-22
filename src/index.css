@@ -1,15 +1,57 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-theme-bg text-theme-text font-sans antialiased;
-    color-scheme: dark;
+  :root {
+    --color-bg: #FFFFFF;
+    --color-bg-secondary: #F7F7F7;
+    --color-surface: #FFFFFF;
+    --color-surface-secondary: #F0F0F0;
+    --color-border: #DEDEDE;
+    
+    --color-text: #111111;
+    --color-text-secondary: #555555;
+    --color-muted: #888888;
+    
+    --color-accent: #000000;
+    --color-button: #000000;
+    --color-button-text: #FFFFFF;
+    
+    /* Grayscale states for elements like attendance */
+    --color-present: #333333;
+    --color-present-bg: rgba(0, 0, 0, 0.05);
+    --color-absent: #888888;
+    --color-absent-bg: rgba(0, 0, 0, 0.02);
+    --color-late: #555555;
+    --color-late-bg: rgba(0, 0, 0, 0.03);
   }
-  
-  select {
-    color-scheme: dark;
+
+  .dark {
+    --color-bg: #050505;
+    --color-bg-secondary: #0B0B0B;
+    --color-surface: #111111;
+    --color-surface-secondary: #181818;
+    --color-border: #292929;
+    
+    --color-text: #FFFFFF;
+    --color-text-secondary: #C7C7C7;
+    --color-muted: #888888;
+    
+    --color-accent: #FFFFFF;
+    --color-button: #FFFFFF;
+    --color-button-text: #000000;
+    
+    --color-present: #E0E0E0;
+    --color-present-bg: rgba(255, 255, 255, 0.1);
+    --color-absent: #666666;
+    --color-absent-bg: rgba(255, 255, 255, 0.05);
+    --color-late: #999999;
+    --color-late-bg: rgba(255, 255, 255, 0.08);
+  }
+
+  body {
+    @apply bg-theme-bg text-theme-text font-sans antialiased transition-colors duration-300;
   }
   
   option {
@@ -20,40 +62,40 @@
 @layer components {
   /* Minimalist Premium Card */
   .card {
-    @apply bg-theme-surface rounded-[14px] border border-theme-border shadow-soft transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] relative overflow-hidden;
+    @apply bg-theme-surface rounded-[12px] border border-theme-border shadow-sm transition-all duration-300 relative overflow-hidden;
   }
   .card:hover {
-    @apply shadow-float border-theme-border-subtle;
+    @apply shadow-md border-theme-muted/30;
   }
   
   /* Clickable Cards & Elements */
   .card.cursor-pointer:hover {
-    box-shadow: 0 12px 30px rgba(109, 124, 255, 0.15);
-    @apply -translate-y-[4px] scale-[1.02] border-theme-accent/40;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    @apply -translate-y-[2px] border-theme-accent/30;
+  }
+  .dark .card.cursor-pointer:hover {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
   }
   .card.cursor-pointer:active {
-    @apply scale-[0.98] translate-y-0;
+    @apply scale-[0.99] translate-y-0;
   }
 
   /* Typography */
   .title-h1 {
-    @apply text-[24px] md:text-[30px] font-bold tracking-tight text-theme-primary;
+    @apply text-[24px] md:text-[30px] font-bold tracking-tight text-theme-text;
   }
   .title-h2 {
-    @apply text-[18px] md:text-[22px] font-semibold text-theme-primary;
+    @apply text-[18px] md:text-[22px] font-semibold text-theme-text;
   }
 
   /* Buttons */
   .btn-primary {
-    @apply bg-theme-accent text-white font-medium rounded-lg px-4 py-2 
-           transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]
-           flex items-center justify-center gap-2 border border-theme-accent;
+    @apply bg-theme-button text-theme-button-text font-medium rounded-lg px-4 py-2 
+           transition-all duration-300 
+           flex items-center justify-center gap-2 border border-theme-button;
   }
   .btn-primary:hover {
-    background-color: #8190FF;
-    border-color: #8190FF;
-    box-shadow: 0 8px 25px rgba(109, 124, 255, 0.35);
-    @apply -translate-y-[2px] scale-[1.04];
+    @apply opacity-90 -translate-y-[1px] shadow-md;
   }
   .btn-primary:active {
     @apply scale-95 translate-y-[1px];
@@ -63,25 +105,23 @@
   }
   
   .btn-secondary {
-    @apply bg-theme-surface-elevated text-theme-text font-medium rounded-lg px-4 py-2 
+    @apply bg-theme-surface text-theme-text font-medium rounded-lg px-4 py-2 
            border border-theme-border
-           transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]
+           transition-all duration-300 
            flex items-center justify-center gap-2;
   }
   .btn-secondary:hover {
-    box-shadow: 0 8px 25px rgba(56, 189, 248, 0.15);
-    @apply bg-theme-surface-higher border-theme-cyan/50 text-theme-cyan -translate-y-[2px] scale-[1.04];
+    @apply bg-theme-surface-secondary border-theme-muted/50 -translate-y-[1px];
   }
   .btn-secondary:active {
     @apply scale-95 translate-y-[1px];
   }
 
   .btn-icon {
-    @apply p-2 rounded-full text-theme-text-secondary transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] border border-transparent;
+    @apply p-2 rounded-full text-theme-text-secondary transition-all duration-300 border border-transparent;
   }
   .btn-icon:hover {
-    box-shadow: 0 8px 20px rgba(109, 124, 255, 0.15);
-    @apply text-theme-primary bg-theme-surface-elevated border-theme-accent/30 -translate-y-[2px] scale-[1.08];
+    @apply text-theme-text bg-theme-surface-secondary border-theme-border -translate-y-[1px];
   }
 
   /* Modern Data Table */
@@ -90,39 +130,35 @@
   }
   
   .premium-table th {
-    @apply bg-theme-surface-elevated text-[11px] font-bold text-theme-muted uppercase tracking-wider px-6 py-4 border-b border-theme-border;
+    @apply bg-theme-surface-secondary text-[11px] font-bold text-theme-muted uppercase tracking-wider px-6 py-4 border-b border-theme-border;
   }
   
   .premium-table td {
-    @apply px-6 py-4 border-b border-theme-border align-middle bg-theme-surface text-sm;
+    @apply px-6 py-4 border-b border-theme-border align-middle bg-theme-surface text-sm transition-colors duration-200;
   }
   
   .premium-table tr:last-child td {
     @apply border-b-0;
   }
   
-  .premium-table tr {
-    @apply transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)];
-  }
-  .premium-table tr:hover {
-    @apply bg-theme-surface-elevated;
+  .premium-table tr:hover td {
+    @apply bg-theme-bg-secondary;
   }
   
   .premium-table tr.cursor-pointer {
-    @apply relative block w-full table-row; /* Ensure layout doesn't break */
+    @apply relative block w-full table-row;
   }
   .premium-table tr.cursor-pointer:hover {
-    box-shadow: 0 8px 25px rgba(109, 124, 255, 0.1);
-    @apply bg-theme-surface-elevated z-10 scale-[1.01];
+    @apply z-10;
   }
   .premium-table tr.cursor-pointer:hover td {
-    @apply border-transparent; /* Hide bottom borders while floating */
+    @apply border-transparent shadow-sm;
   }
   .premium-table tr.cursor-pointer:active {
     @apply scale-[0.99];
   }
 
-  /* Scrollbar for dark theme */
+  /* Scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -131,9 +167,9 @@
     @apply bg-theme-bg;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-theme-surface-higher rounded-full border-2 border-theme-bg;
+    @apply bg-theme-surface-secondary rounded-full border-2 border-theme-bg;
   }
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-theme-border;
+    @apply bg-theme-muted;
   }
 }
