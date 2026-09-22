@@ -173,7 +173,7 @@ const runImport = async () => {
 
     } else {
       // Create new user
-      const internalEmail = `${regdNo.toLowerCase()}@mitra.local`;
+      const internalEmail = `${regdNo.toLowerCase()}@vishnu.edu.in`;
       const initialPassword = regdNo;
 
       let userRecord;

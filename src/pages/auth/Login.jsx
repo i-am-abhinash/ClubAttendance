@@ -34,7 +34,11 @@ const Login = () => {
       await login(email, password);
       navigate('/');
     } catch (err) {
-      setError(err.message || 'Failed to login');
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+        setError('Invalid registration number or password. Please check your credentials and try again.');
+      } else {
+        setError('An error occurred during login. Please try again.');
+      }
     }
     setLoading(false);
   };
