@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useClubData } from '../../context/ClubDataContext';
 import { formatPercentage, calculateAttendanceStats, applyFilters } from '../../utils/analyticsUtils';
 
 import { Link } from 'react-router-dom';
 import Layout from '../../components/common/Layout';
 import FilterBar from '../../components/common/FilterBar';
 import { ClubAnalytics } from '../../components/analytics/ClubAnalytics';
-import { fetchMembers } from '../../services/memberService';
-import { fetchTeams } from '../../services/teamService';
 import { fetchAttendance } from '../../services/attendanceService';
 
 import { Users, Calendar, TrendingUp, UsersRound, Database, UserMinus } from 'lucide-react';
@@ -30,8 +29,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   
   // Raw Data
-  const [members, setMembers] = useState([]);
-  const [teams, setTeams] = useState([]);
+  const { members, teams, loading: contextLoading } = useClubData();
   const [records, setRecords] = useState([]);
 
   // Filters
@@ -41,11 +39,7 @@ const AdminDashboard = () => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const m = await fetchMembers();
-        const t = await fetchTeams();
         const r = await fetchAttendance();
-        setMembers(m);
-        setTeams(t);
         setRecords(r);
       } catch (err) {
         console.error(err);
@@ -55,7 +49,7 @@ const AdminDashboard = () => {
     loadData();
   }, []);
 
-  if (loading) {
+  if (loading || contextLoading) {
     return (
       <Layout title="Dashboard" description="Club-wide overview of attendance and member activity.">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

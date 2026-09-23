@@ -1,20 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { fetchTeams } from '../../services/teamService';
 import { Calendar, Users, Filter, RotateCcw, Activity } from 'lucide-react';
+import { useClubData } from '../../context/ClubDataContext';
 import { useAuth } from '../../context/AuthContext';
 import Dropdown from './Dropdown';
 
 const FilterBar = ({ filters, setFilters, availableTeams = [] }) => {
   const { isAdmin } = useAuth();
-  const [teams, setTeams] = useState(availableTeams);
-
-  useEffect(() => {
-    if (isAdmin && availableTeams.length === 0) {
-      fetchTeams().then(setTeams);
-    } else {
-      setTeams(availableTeams);
-    }
-  }, [isAdmin, availableTeams]);
+  const { teams: contextTeams } = useClubData();
+  const teams = availableTeams.length > 0 ? availableTeams : contextTeams;
 
   const resetFilters = () => {
     setFilters({ timePeriod: 'all', teamId: 'all', status: 'all', customStart: '', customEnd: '' });

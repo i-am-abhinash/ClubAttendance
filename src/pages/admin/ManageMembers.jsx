@@ -4,6 +4,7 @@ import { exportAttendanceToExcel } from '../../utils/exportUtils';
 import { formatPercentage, calculateAttendanceStats } from '../../utils/analyticsUtils';
 
 import Layout from '../../components/common/Layout';
+import { useClubData } from '../../context/ClubDataContext';
 import { fetchMembers, updateMember, deleteMember } from '../../services/memberService';
 import { registerUser } from '../../services/authService';
 import { fetchTeams } from '../../services/teamService';
@@ -16,8 +17,7 @@ import Dropdown from '../../components/common/Dropdown';
 
 const ManageMembers = () => {
   const { user } = useAuth();
-  const [members, setMembers] = useState([]);
-  const [teams, setTeams] = useState([]);
+  const { members, teams, loading: contextLoading, refreshClubData } = useClubData();
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -39,11 +39,7 @@ const ManageMembers = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [mData, tData, rData] = await Promise.all([
-        fetchMembers(), fetchTeams(), fetchAttendance()
-      ]);
-      setMembers(mData);
-      setTeams(tData);
+      const rData = await fetchAttendance();
       setRecords(rData);
     } catch (err) {
       console.error(err);

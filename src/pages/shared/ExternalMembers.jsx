@@ -2,14 +2,17 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../../components/common/Layout';
 import { fetchExternalMembers, updateMember } from '../../services/memberService';
 import { fetchTeams } from '../../services/teamService';
+import { useClubData } from '../../context/ClubDataContext';
 import { useAuth } from '../../context/AuthContext';
 import { Search, UserMinus, UserPlus, Users } from 'lucide-react';
 import Dropdown from '../../components/common/Dropdown';
 
 const ExternalMembers = () => {
   const { user, isAdmin } = useAuth();
-  const [members, setMembers] = useState([]);
-  const [teams, setTeams] = useState([]);
+  const { members: allMembers, teams, loading: contextLoading, refreshClubData } = useClubData();
+  
+  // We can derive external members from allMembers if Admin, otherwise we fetch locally
+  const [localMembers, setLocalMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   
@@ -17,30 +20,31 @@ const ExternalMembers = () => {
   const [selectedTeams, setSelectedTeams] = useState({});
 
   useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchExternalMembers();
-      setMembers(data);
-      
-      if (isAdmin) {
-        const t = await fetchTeams();
-        setTeams(t);
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        if (isAdmin) {
+          // If admin, data is already in context (or will be soon)
+        } else {
+          // Leaders need to fetch external members specifically
+          const data = await fetchExternalMembers();
+          setLocalMembers(data);
+        }
+      } catch (err) {
+        console.error(err);
       }
-    } catch (err) {
-      console.error(err);
-    }
-    setLoading(false);
-  };
+      setLoading(false);
+    };
+    loadData();
+  }, [isAdmin]);
+
+  const members = isAdmin ? allMembers.filter(m => !m.teamId && m.role === 'Member') : localMembers;
 
   const handleAssignToTeam = async (memberId, teamIdToAssign) => {
     if (!teamIdToAssign) return;
     try {
       await updateMember(memberId, { teamId: teamIdToAssign });
-      setMembers(prev => prev.filter(m => m.id !== memberId));
+      if (isAdmin) refreshClubData(); else setLocalMembers(prev => prev.filter(m => m.id !== memberId));
       
       // Cleanup local state
       const newSelected = {...selectedTeams};
@@ -80,7 +84,7 @@ const ExternalMembers = () => {
       </div>
 
       <div className="card overflow-hidden">
-        {loading ? (
+        {(loading || (isAdmin && contextLoading)) ? (
           <div className="p-12 text-center">
             <div className="w-6 h-6 border-2 border-theme-accent border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-sm text-theme-text-secondary">Loading external members...</p>

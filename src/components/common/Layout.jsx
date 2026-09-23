@@ -4,26 +4,22 @@ import RadialNavigation from './RadialNavigation';
 import { Search, Users, Briefcase, X, Fingerprint, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { fetchMembers } from '../../services/memberService';
-import { fetchTeams } from '../../services/teamService';
+import { useClubData } from '../../context/ClubDataContext';
 
 const Layout = ({ children, title, description }) => {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   
+  // Consume shared context — no local fetch needed
+  const { members: allMembers, teams: allTeams } = useClubData();
+  const allData = { members: allMembers, teams: allTeams };
+
   const [searchQuery, setSearchQuery] = useState('');
-  const [allData, setAllData] = useState({ members: [], teams: [] });
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const searchRef = useRef(null);
 
-  useEffect(() => {
-    if (user?.role === 'Admin') {
-      Promise.all([fetchMembers(), fetchTeams()]).then(([m, t]) => {
-        setAllData({ members: m, teams: t });
-      }).catch(console.error);
-    }
-  }, [user]);
+
 
   useEffect(() => {
     const handleClickOutside = (e) => {

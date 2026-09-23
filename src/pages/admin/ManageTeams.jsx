@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/common/Layout';
+import { useClubData } from '../../context/ClubDataContext';
 import { fetchTeams, createTeam, deleteTeam } from '../../services/teamService';
 import { fetchMembers } from '../../services/memberService';
 import { Plus, Trash2, Users, ArrowRight } from 'lucide-react';
 
 const ManageTeams = () => {
-  const [teams, setTeams] = useState([]);
+  const { members, teams, loading: contextLoading, refreshClubData } = useClubData();
   const [teamStats, setTeamStats] = useState({});
   const [newTeamName, setNewTeamName] = useState('');
   const [loading, setLoading] = useState(true);
@@ -14,33 +15,29 @@ const ManageTeams = () => {
   
   const navigate = useNavigate();
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
   const loadData = async () => {
+    if (contextLoading) return;
     setLoading(true);
     try {
-      const tData = await fetchTeams();
-      const mData = await fetchMembers();
-      
       const stats = {};
-      tData.forEach(t => {
-        const teamMembers = mData.filter(m => m.teamId === t.id);
+      teams.forEach(t => {
+        const teamMembers = members.filter(m => m.teamId === t.id);
         const leaders = teamMembers.filter(m => m.role === 'Team Leader');
         stats[t.id] = {
           memberCount: teamMembers.length,
           leaderName: leaders.length > 0 ? leaders[0].name : 'Unassigned'
         };
       });
-      
-      setTeams(tData);
       setTeamStats(stats);
     } catch (err) {
       console.error(err);
     }
     setLoading(false);
   };
+  
+  useEffect(() => {
+    loadData();
+  }, [teams, members, contextLoading]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
