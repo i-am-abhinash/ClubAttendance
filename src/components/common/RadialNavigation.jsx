@@ -80,7 +80,7 @@ const RadialNavigation = () => {
   ];
   const totalItems = allItems.length;
 
-  const radius = isMobile ? 85 : 100; 
+  const radius = isMobile ? 75 : 100; 
   const arcRadius = radius - 15; 
 
   const getAngle = (index, total) => {
@@ -117,13 +117,14 @@ const RadialNavigation = () => {
 
       <aside 
         ref={navRef}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+        onMouseEnter={!isMobile ? handleMouseEnter : undefined}
+        onMouseLeave={!isMobile ? handleMouseLeave : undefined}
         className="fixed left-4 sm:left-6 top-1/2 -translate-y-1/2 z-50 pointer-events-auto"
       >
         <div className="relative flex items-center justify-center w-[48px] h-[48px] sm:w-[56px] sm:h-[56px]">
           
           <div
+            onClick={isMobile ? () => setIsOpen(!isOpen) : undefined}
             className={clsx(
               "absolute z-50 rounded-full flex items-center justify-center transition-all duration-300",
               "w-full h-full cursor-pointer",

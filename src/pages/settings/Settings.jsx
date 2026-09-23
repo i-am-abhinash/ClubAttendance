@@ -3,6 +3,7 @@ import Layout from '../../components/common/Layout';
 import { useAuth } from '../../context/AuthContext';
 import { Settings as SettingsIcon, Shield, Key } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+import AttendanceImport from '../../components/admin/AttendanceImport';
 
 const Settings = () => {
   const { user, changePassword } = useAuth();
@@ -66,6 +67,8 @@ const Settings = () => {
             </span>
           </div>
         </div>
+
+        {user?.role === 'Admin' && <AttendanceImport />}
 
         {/* Security Settings */}
         <div className="card overflow-hidden">

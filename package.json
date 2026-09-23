@@ -7,7 +7,15 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seed": "node scripts/seed.js",
+    "wipeDummies": "node scripts/wipeDummies.js",
+    "testRead": "node scripts/testRead.js",
+    "testAuth": "node scripts/testAuth.js",
+    "checkExcel": "node scripts/checkExcel.js",
+    "dryrun": "node scripts/dryrun.js",
+    "dryrun2": "node scripts/dryrun2.js",
+    "setupManagement": "node scripts/setupManagementTeam.cjs"
   },
   "dependencies": {
     "clsx": "^2.1.1",

@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Parse .env manually to avoid installing dotenv
-const envPath = path.resolve(__dirname, '.env');
+const envPath = path.resolve(__dirname, '../.env');
 const envFile = fs.readFileSync(envPath, 'utf-8');
 const env = {};
 envFile.split('\n').forEach(line => {

@@ -1,5 +1,12 @@
-﻿import xlsx from 'xlsx';
-const workbook = xlsx.readFile('teams allocation.xlsx');
+import xlsx from 'xlsx';
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const excelPath = path.resolve(__dirname, '../teams allocation.xlsx');
+
+const workbook = xlsx.readFile(excelPath);
 const sheet = workbook.Sheets[workbook.SheetNames[0]];
 const data = xlsx.utils.sheet_to_json(sheet);
 let ai = 0, vc = 0, ic = 0, mk = 0, ext = 0, errors = 0;

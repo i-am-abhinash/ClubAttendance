@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { formatPercentage, calculateAttendanceStats, applyFilters } from '../../utils/analyticsUtils';
+
 import { Link } from 'react-router-dom';
 import Layout from '../../components/common/Layout';
 import FilterBar from '../../components/common/FilterBar';
@@ -6,7 +8,7 @@ import { ClubAnalytics } from '../../components/analytics/ClubAnalytics';
 import { fetchMembers } from '../../services/memberService';
 import { fetchTeams } from '../../services/teamService';
 import { fetchAttendance } from '../../services/attendanceService';
-import { calculateAttendanceStats, applyFilters } from '../../utils/analyticsUtils';
+
 import { Users, Calendar, TrendingUp, UsersRound, Database, UserMinus } from 'lucide-react';
 
 const StatCard = ({ title, value, subtitle, icon: Icon }) => (
@@ -92,7 +94,7 @@ const AdminDashboard = () => {
         />
         <StatCard 
           title="Attendance Rate" 
-          value={`${stats.percentage}%`} 
+          value={`${formatPercentage(stats.percentage)}%`} 
           subtitle="Filtered average" 
           icon={TrendingUp} 
         />

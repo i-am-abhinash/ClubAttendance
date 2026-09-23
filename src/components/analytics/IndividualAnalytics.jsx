@@ -1,88 +1,100 @@
 import React, { useMemo } from 'react';
+import { calculateRate, formatPercentage } from '../../utils/analyticsUtils';
+
 import { 
   BarChart, Bar, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';
-import { parseISO, format, subDays, isAfter } from 'date-fns';
+import { parseISO, format, startOfWeek, subWeeks } from 'date-fns';
+import { useTheme } from '../../context/ThemeContext';
 
 export const IndividualAnalytics = ({ records }) => {
-  
-  // 1. Monthly Attendance Trend
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
+  const accentColor = isDark ? 'var(--color-accent)' : '#3949AB';
+  const gridColor = isDark ? 'var(--color-border)' : '#D9DCE3';
+  const axisColor = isDark ? 'var(--color-muted)' : '#6B7280';
+
+  // 1. Monthly Attendance Trend (Bar Chart)
   const monthlyData = useMemo(() => {
     const monthMap = {};
     records.forEach(r => {
       const date = parseISO(r.date);
       const monthKey = format(date, 'MMM yyyy'); // e.g. "Sep 2026"
       if (!monthMap[monthKey]) {
-        monthMap[monthKey] = { name: monthKey, dateVal: date, present: 0, late: 0, total: 0 };
+        monthMap[monthKey] = { name: monthKey, dateVal: date, present: 0, absent: 0 };
       }
-      monthMap[monthKey].total += 1;
       if (r.status === 'Present') monthMap[monthKey].present += 1;
-      if (r.status === 'Late') monthMap[monthKey].late += 1;
+      if (r.status === 'Absent') monthMap[monthKey].absent += 1;
     });
 
     return Object.values(monthMap)
       .sort((a, b) => a.dateVal - b.dateVal)
-      .map(d => ({
-        name: d.name,
-        rate: Math.round(((d.present + (d.late * 0.5)) / d.total) * 100)
-      }));
+      .map(d => {
+        const total = d.present + d.absent;
+        return {
+          name: format(d.dateVal, 'MMM'),
+          fullMonth: d.name,
+          present: d.present,
+          absent: d.absent,
+          rate: total === 0 ? 0 : calculateRate(d.present, d.absent)
+        };
+      });
   }, [records]);
 
-  // 2. Weekly Behavior (Last 7 Days)
+  // 2. Weekly Trend
   const weeklyData = useMemo(() => {
-    const sevenDaysAgo = subDays(new Date(), 7);
-    const recent = records.filter(r => isAfter(parseISO(r.date), sevenDaysAgo));
-    
-    // Create a map of the last 7 days
-    const days = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = subDays(new Date(), i);
-      days.push({
-        dateStr: format(d, 'yyyy-MM-dd'),
-        display: format(d, 'EEE'), // Mon, Tue
-        status: null, // null means no session
-        color: 'var(--color-border)' // default dark gray
-      });
-    }
-
-    // Fill in records
-    recent.forEach(r => {
-      const day = days.find(d => d.dateStr === r.date);
-      if (day) {
-        day.status = r.status;
-        if (r.status === 'Present') day.color = 'var(--color-present)';
-        else if (r.status === 'Late') day.color = 'var(--color-late)';
-        else if (r.status === 'Absent') day.color = 'var(--color-absent)';
+    const weekMap = {};
+    records.forEach(r => {
+      const date = parseISO(r.date);
+      const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+      const weekKey = format(weekStart, 'MMM d');
+      if (!weekMap[weekKey]) {
+        weekMap[weekKey] = { name: `Week of ${weekKey}`, dateVal: weekStart, present: 0, absent: 0 };
       }
+      if (r.status === 'Present') weekMap[weekKey].present += 1;
+      if (r.status === 'Absent') weekMap[weekKey].absent += 1;
     });
 
-    return days;
+    return Object.values(weekMap)
+      .sort((a, b) => a.dateVal - b.dateVal)
+      .slice(-8) // Show last 8 weeks max
+      .map(d => {
+        const total = d.present + d.absent;
+        return {
+          name: d.name,
+          present: d.present,
+          absent: d.absent,
+          rate: total === 0 ? 0 : calculateRate(d.present, d.absent)
+        };
+      });
   }, [records]);
 
-  const CustomTooltip = ({ active, payload, label }) => {
+  const CustomTooltipMonthly = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
+      const data = payload[0].payload;
       return (
-        <div className="bg-theme-surface-higher p-3 border border-theme-border rounded-lg shadow-float">
-          <p className="text-xs font-bold text-theme-muted mb-1">{label}</p>
-          <p className="text-sm font-medium text-theme-primary">
-            {payload[0].name === 'rate' ? 'Attendance' : payload[0].name}: {payload[0].value}{payload[0].name === 'rate' ? '%' : ''}
-          </p>
+        <div className="bg-theme-surface-higher p-3 border border-theme-border rounded-lg shadow-float min-w-[150px]">
+          <p className="text-sm font-bold text-theme-primary mb-2">{data.fullMonth || label}</p>
+          <p className="text-sm text-theme-text-secondary">Present: {data.present}</p>
+          <p className="text-sm text-theme-text-secondary">Absent: {data.absent}</p>
+          <p className="text-sm font-bold mt-2" style={{color: accentColor}}>Attendance: {formatPercentage(data.rate)}%</p>
         </div>
       );
     }
     return null;
   };
 
-  const CustomWeeklyTooltip = ({ active, payload }) => {
+  const CustomTooltipWeekly = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-theme-surface-higher p-3 border border-theme-border rounded-lg shadow-float">
-          <p className="text-xs font-bold text-theme-muted mb-1">{data.dateStr}</p>
-          <p className="text-sm font-medium drop-shadow-[0_0_8px_currentColor]" style={{ color: data.color }}>
-            {data.status || 'No Session'}
-          </p>
+        <div className="bg-theme-surface-higher p-3 border border-theme-border rounded-lg shadow-float min-w-[150px]">
+          <p className="text-sm font-bold text-theme-primary mb-2">{data.name}</p>
+          <p className="text-sm text-theme-text-secondary">Present: {data.present}</p>
+          <p className="text-sm text-theme-text-secondary">Absent: {data.absent}</p>
+          <p className="text-sm font-bold mt-2" style={{color: accentColor}}>Attendance: {formatPercentage(data.rate)}%</p>
         </div>
       );
     }
@@ -97,41 +109,48 @@ export const IndividualAnalytics = ({ records }) => {
       {/* Monthly Trend */}
       <div className="card p-6 bg-theme-surface">
         <h3 className="font-bold text-theme-primary mb-6">Monthly Attendance</h3>
-        <div className="h-[220px]">
+        <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
-              <XAxis dataKey="name" tick={{fontSize: 12, fill: 'var(--color-muted)'}} axisLine={false} tickLine={false} dy={10} />
-              <YAxis domain={[0, 100]} tick={{fontSize: 12, fill: 'var(--color-muted)'}} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Line type="monotone" dataKey="rate" name="rate" stroke="var(--color-text)" strokeWidth={3} dot={{r: 4, fill: 'var(--color-text)', strokeWidth: 2, stroke: 'var(--color-surface)'}} activeDot={{r: 6}} />
-            </LineChart>
+            <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+              <XAxis dataKey="name" tick={{fontSize: 12, fill: axisColor}} axisLine={{stroke: axisColor, strokeOpacity: 0.5}} tickLine={false} dy={10} />
+              <YAxis ticks={[0, 25, 50, 75, 100]} domain={[0, 100]} tick={{fontSize: 12, fill: axisColor}} axisLine={{stroke: axisColor, strokeOpacity: 0.5}} tickLine={false} />
+              <Tooltip cursor={{fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}} content={<CustomTooltipMonthly />} />
+              <Bar 
+                dataKey="rate" 
+                fill={accentColor} 
+                radius={[4, 4, 0, 0]} 
+                barSize={30}
+                isAnimationActive={true}
+                animationDuration={1000}
+              />
+            </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Weekly Behavior */}
+      {/* Weekly Trend */}
       <div className="card p-6 bg-theme-surface">
-        <h3 className="font-bold text-theme-primary mb-6">Recent Weekly Behavior</h3>
-        <div className="h-[220px]">
+        <h3 className="font-bold text-theme-primary mb-6">Weekly Attendance Trend</h3>
+        <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={weeklyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
-              <XAxis dataKey="display" tick={{fontSize: 12, fill: 'var(--color-muted)'}} axisLine={false} tickLine={false} dy={10} />
-              <YAxis hide domain={[0, 1]} />
-              <Tooltip cursor={{fill: 'var(--color-surface-higher)'}} content={<CustomWeeklyTooltip />} />
-              <Bar dataKey={() => 1} radius={[4, 4, 4, 4]} barSize={24}>
-                {weeklyData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Bar>
-            </BarChart>
+            <LineChart data={weeklyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={gridColor} />
+              <XAxis dataKey="name" tickFormatter={(v) => v.replace('Week of ', '')} tick={{fontSize: 12, fill: axisColor}} axisLine={{stroke: axisColor, strokeOpacity: 0.5}} tickLine={false} dy={10} />
+              <YAxis ticks={[0, 25, 50, 75, 100]} domain={[0, 100]} tick={{fontSize: 12, fill: axisColor}} axisLine={{stroke: axisColor, strokeOpacity: 0.5}} tickLine={false} />
+              <Tooltip content={<CustomTooltipWeekly />} />
+              <Line 
+                type="linear" 
+                dataKey="rate" 
+                stroke={accentColor} 
+                strokeWidth={2} 
+                dot={{r: 4, fill: accentColor, strokeWidth: 0}} 
+                activeDot={{r: 6, fill: accentColor, stroke: 'var(--color-bg)', strokeWidth: 2}}
+                isAnimationActive={true}
+                animationDuration={1000}
+              />
+            </LineChart>
           </ResponsiveContainer>
-        </div>
-        <div className="flex gap-4 mt-4 justify-center">
-          <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shadow-[0_0_8px_currentColor] bg-theme-present text-theme-present"></div><span className="text-[10px] text-theme-text-secondary uppercase font-semibold">Present</span></div>
-          <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shadow-[0_0_8px_currentColor] bg-theme-late text-theme-late"></div><span className="text-[10px] text-theme-text-secondary uppercase font-semibold">Late</span></div>
-          <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full shadow-[0_0_8px_currentColor] bg-theme-absent text-theme-absent"></div><span className="text-[10px] text-theme-text-secondary uppercase font-semibold">Absent</span></div>
         </div>
       </div>
 

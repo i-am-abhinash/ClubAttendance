@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { formatPercentage, calculateAttendanceStats } from '../../utils/analyticsUtils';
+
 import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/common/Layout';
 import { useAuth } from '../../context/AuthContext';
 import { fetchMembers } from '../../services/memberService';
 import { fetchAttendance } from '../../services/attendanceService';
-import { calculateAttendanceStats } from '../../utils/analyticsUtils';
+
 import { Users, Calendar, TrendingUp, ArrowRight } from 'lucide-react';
 
 const StatCard = ({ title, value, subtitle, icon: Icon }) => (
@@ -35,13 +37,11 @@ const LeaderDashboard = () => {
       if (!user?.teamId) return;
       setLoading(true);
       try {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const startDateString = thirtyDaysAgo.toISOString().split('T')[0];
+        
 
         const m = await fetchMembers(user.teamId);
         setTeamMembers(m);
-        const r = await fetchAttendance(user.teamId, null, startDateString);
+        const r = await fetchAttendance(user.teamId);
         setRecords(r);
       } catch (err) {
         console.error(err);
@@ -76,20 +76,20 @@ const LeaderDashboard = () => {
         />
         <StatCard 
           title="Attendance Rate" 
-          value={`${stats.percentage}%`} 
-          subtitle="Last 30 Days" 
+          value={`${formatPercentage(stats.percentage)}%`} 
+          subtitle="All Time" 
           icon={TrendingUp} 
         />
         <StatCard 
           title="Present Sessions" 
           value={stats.present} 
-          subtitle="Last 30 Days" 
+          subtitle="All Time" 
           icon={Calendar} 
         />
         <StatCard 
           title="Total Logged" 
           value={stats.totalRecords} 
-          subtitle="Last 30 Days" 
+          subtitle="All Time" 
           icon={Calendar} 
         />
       </div>

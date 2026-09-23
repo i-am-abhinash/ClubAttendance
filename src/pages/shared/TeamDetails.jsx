@@ -1,4 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { MemberDetailsModal } from "../../components/members/MemberDetailsModal";
+import { formatPercentage } from '../../utils/analyticsUtils';
+import { exportAttendanceToExcel } from '../../utils/exportUtils';
+
+
 import { useParams, useNavigate } from 'react-router-dom';
 import Layout from '../../components/common/Layout';
 import { useAuth } from '../../context/AuthContext';
@@ -6,7 +11,7 @@ import { fetchMembers } from '../../services/memberService';
 import { fetchAttendance, markAttendance } from '../../services/attendanceService';
 import { fetchTeams } from '../../services/teamService';
 import { TeamAnalytics } from '../../components/analytics/TeamAnalytics';
-import { Users, Calendar, TrendingUp, Search, ArrowLeft, ShieldAlert, CheckCircle2, Clock, XCircle, Minus, X, Fingerprint, Briefcase } from 'lucide-react';
+import { Users, Calendar, TrendingUp, Search, ArrowLeft, ShieldAlert, CheckCircle2, Clock, XCircle, Minus, X, Fingerprint, Briefcase, Download } from 'lucide-react';
 import clsx from 'clsx';
 
 const TeamDetails = () => {
@@ -40,14 +45,10 @@ const TeamDetails = () => {
     const loadInitialData = async () => {
       setLoading(true);
       try {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const startDateString = thirtyDaysAgo.toISOString().split('T')[0];
-
         const [teamsData, membersData, recordsData] = await Promise.all([
           fetchTeams(),
           fetchMembers(effectiveTeamId),
-          fetchAttendance(effectiveTeamId, null, startDateString)
+          fetchAttendance(effectiveTeamId)
         ]);
 
         const team = teamsData.find(t => t.id === effectiveTeamId);
@@ -166,7 +167,7 @@ const TeamDetails = () => {
     <>
     <Layout title={teamInfo?.name || "Team Workspace"} description="Unified team management and analytics.">
       
-      {/* Header Actions */}
+            {/* Header Actions */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           {isAdmin && (
@@ -179,6 +180,13 @@ const TeamDetails = () => {
           )}
           <h2 className="text-2xl font-bold text-theme-primary drop-shadow-sm">{teamInfo?.name}</h2>
         </div>
+        
+        <button 
+          onClick={() => exportAttendanceToExcel(teamMembers, records, `${teamInfo?.name?.replace(/ /g, '_') || 'Team'}_Attendance_Report`)}
+          className="btn-primary py-2 px-4 text-sm flex items-center gap-2"
+        >
+          <Download className="w-4 h-4" /> Export Excel
+        </button>
       </div>
 
       {/* Tabs */}
@@ -215,7 +223,7 @@ const TeamDetails = () => {
               <h3 className="text-sm font-bold text-theme-muted uppercase tracking-wider">Overall Attendance</h3>
               <TrendingUp className="w-5 h-5 text-theme-accent" />
             </div>
-            <div className="text-3xl font-bold text-theme-primary drop-shadow-sm">{getOverallAttendanceRate()}%</div>
+            <div className="text-3xl font-bold text-theme-primary drop-shadow-sm">{formatPercentage(getOverallAttendanceRate())}%</div>
           </div>
 
           <div className="card p-6 bg-gradient-to-br from-theme-surface to-[#0B111D]">
@@ -460,67 +468,17 @@ const TeamDetails = () => {
 
     </Layout>
 
+      
       {/* Member Profile Modal */}
-      {selectedMember && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-theme-bg border rounded-2xl w-full max-w-md shadow-float overflow-hidden animate-in zoom-in-95 duration-200" style={{borderColor:'var(--color-border-solid)'}}>
-            <div className="h-20 bg-theme-bg-secondary relative">
-              <button 
-                onClick={() => setSelectedMember(null)}
-                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-theme-bg text-theme-text hover:bg-theme-muted/20 transition-colors border border-theme-border-solid"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="px-6 pb-6 relative">
-              <div className="w-20 h-20 rounded-2xl bg-theme-bg-secondary border-[3px] border-theme-bg flex items-center justify-center text-3xl font-bold text-theme-text shadow-lg absolute -top-10 left-6" style={{borderColor:'var(--color-border-solid)'}}>
-                {selectedMember.name?.charAt(0).toUpperCase()}
-              </div>
-              <div className="pt-12">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-xl font-bold text-theme-text">{selectedMember.name}</h2>
-                    <p className="text-theme-text-secondary text-sm flex items-center gap-2 mt-1">
-                      <Fingerprint className="w-3.5 h-3.5" /> {selectedMember.regdNo || 'No RegdNo'}
-                    </p>
-                  </div>
-                  <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md ${
-                    selectedMember.role === 'Admin' ? 'bg-theme-present-bg text-theme-present' :
-                    selectedMember.role === 'Team Leader' ? 'bg-theme-accent/10 text-theme-accent' :
-                    'bg-theme-bg-secondary text-theme-muted border border-theme-border-solid'
-                  }`}>
-                    {selectedMember.role}
-                  </span>
-                </div>
-                <div className="mt-6 space-y-4">
-                  <div className="rounded-xl p-4 border" style={{background:'var(--color-bg-secondary)', borderColor:'var(--color-border-solid)'}}>
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-theme-muted mb-1">Team</div>
-                    <div className="text-sm font-semibold text-theme-text flex items-center gap-2">
-                      <Briefcase className="w-4 h-4 text-theme-text-secondary" /> {teamInfo?.name || 'This Team'}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="rounded-xl p-4 border" style={{background:'var(--color-bg-secondary)', borderColor:'var(--color-border-solid)'}}>
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-theme-muted mb-1">Branch</div>
-                      <div className="text-sm font-semibold text-theme-text truncate">{selectedMember.branch || 'N/A'}</div>
-                    </div>
-                    <div className="rounded-xl p-4 border" style={{background:'var(--color-bg-secondary)', borderColor:'var(--color-border-solid)'}}>
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-theme-muted mb-1">Status</div>
-                      <div className="text-sm font-semibold text-theme-text">Active</div>
-                    </div>
-                  </div>
-                  {selectedMember.email && (
-                    <div className="rounded-xl p-4 border" style={{background:'var(--color-bg-secondary)', borderColor:'var(--color-border-solid)'}}>
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-theme-muted mb-1">Email</div>
-                      <div className="text-sm font-mono text-theme-text-secondary truncate">{selectedMember.email}</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <MemberDetailsModal 
+        member={selectedMember}
+        onClose={() => setSelectedMember(null)}
+        records={records}
+        teams={teamInfo ? [teamInfo] : []}
+        isAdmin={isAdmin}
+        isSaving={false}
+        currentUserId={user?.uid}
+      />
     </>
   );
 };

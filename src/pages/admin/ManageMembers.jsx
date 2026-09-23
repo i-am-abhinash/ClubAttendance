@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { MemberDetailsModal } from "../../components/members/MemberDetailsModal";
+import { exportAttendanceToExcel } from '../../utils/exportUtils';
+import { formatPercentage, calculateAttendanceStats } from '../../utils/analyticsUtils';
+
 import Layout from '../../components/common/Layout';
 import { fetchMembers, updateMember, deleteMember } from '../../services/memberService';
 import { registerUser } from '../../services/authService';
 import { fetchTeams } from '../../services/teamService';
 import { fetchAttendance } from '../../services/attendanceService';
-import { calculateAttendanceStats } from '../../utils/analyticsUtils';
+
 import { IndividualAnalytics } from '../../components/analytics/IndividualAnalytics';
-import { Users, Plus, Trash2, X, ShieldAlert } from 'lucide-react';
+import { Users, Plus, Trash2, X, ShieldAlert, Download } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import Dropdown from '../../components/common/Dropdown';
 
@@ -87,12 +91,11 @@ const ManageMembers = () => {
     setEditTeam(member.teamId || '');
   };
 
-  const handleSaveMember = async () => {
+  const handleSaveMember = async (newRole, newTeam) => {
     if (!selectedMember) return;
     setIsSaving(true);
     try {
-      const newRole = editRole;
-      let newTeamId = editTeam === '' ? null : editTeam;
+      let newTeamId = newTeam === '' ? null : newTeam;
 
       // Check for uniqueness if promoting to Team Leader and assigning a team
       if (newRole === 'Team Leader' && newTeamId) {
@@ -130,9 +133,15 @@ const ManageMembers = () => {
   return (
     <Layout title="Member Directory" description="Manage roles, teams, and view individual analytics.">
       
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-bold text-theme-primary">All Members</h3>
-        <div className="flex items-center gap-4">
+              <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg font-bold text-theme-primary">All Members</h3>
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => exportAttendanceToExcel(filteredMembers, records, 'Members_Attendance_Report')}
+              className="btn-primary py-2 px-4 text-sm flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" /> Export Excel
+            </button>
           <div className="w-64 relative hidden sm:block">
             <input 
               type="text" 
@@ -266,118 +275,18 @@ const ManageMembers = () => {
         )}
       </div>
 
+      
       {/* Member Analytics & Management Modal */}
-      {selectedMember && (
-        <div className="fixed inset-0 bg-theme-bg/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-theme-surface border border-theme-border w-full max-w-4xl rounded-2xl shadow-nav overflow-hidden flex flex-col max-h-[90vh]">
-            
-            <div className="p-6 border-b border-theme-border flex justify-between items-start shrink-0 bg-theme-surface-elevated">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-theme-surface flex items-center justify-center text-theme-text font-bold text-xl border-2 border-theme-border">
-                  {selectedMember.name.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-theme-primary">{selectedMember.name}</h2>
-                  <p className="text-sm text-theme-text-secondary">{selectedMember.email}</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setSelectedMember(null)}
-                className="p-2 bg-theme-surface rounded-full text-theme-text-secondary hover:text-theme-primary hover:bg-theme-border transition-colors border border-theme-border"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-8">
-              
-              {/* Management Section (Only Admin can manage, but they shouldn't change another Admin) */}
-              {selectedMember.role !== 'Admin' && (
-                <div className="p-5 border border-theme-border rounded-xl bg-theme-surface-elevated flex flex-col md:flex-row gap-6">
-                  <div className="flex-1">
-                    <label className="block text-xs font-bold text-theme-muted uppercase tracking-wider mb-2">Role</label>
-                    <Dropdown 
-                      options={[
-                        { label: 'Member', value: 'Member' },
-                        { label: 'Team Leader', value: 'Team Leader' }
-                      ]}
-                      value={editRole}
-                      onChange={(val) => setEditRole(val)}
-                    />
-                  </div>
-                  
-                  <div className="flex-1">
-                    <label className="block text-xs font-bold text-theme-muted uppercase tracking-wider mb-2">Team Assignment</label>
-                    <Dropdown 
-                      options={[
-                        { label: '[ External / Unassigned ]', value: '' },
-                        ...teams.map(t => ({ label: t.name, value: t.id }))
-                      ]}
-                      value={editTeam}
-                      onChange={(val) => setEditTeam(val)}
-                    />
-                  </div>
-                  
-                  <div className="flex items-end">
-                    <button 
-                      onClick={handleSaveMember} 
-                      disabled={isSaving || (editRole === selectedMember.role && editTeam === (selectedMember.teamId || ''))}
-                      className="btn-primary w-full md:w-auto h-[42px]"
-                    >
-                      {isSaving ? 'Saving...' : 'Update Member'}
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {selectedMember.role === 'Admin' && selectedMember.id !== user.uid && (
-                <div className="p-4 rounded-lg bg-theme-accent/10 border border-theme-accent/20 flex items-center gap-3 text-theme-accent text-sm font-medium">
-                  <ShieldAlert className="w-5 h-5" /> You cannot modify another Admin's role.
-                </div>
-              )}
-
-              {/* Analytics Section */}
-              <div>
-                <h3 className="text-sm font-bold text-theme-muted uppercase tracking-wider mb-4">Attendance Analytics</h3>
-                {(() => {
-                  const memberRecords = records.filter(r => r.userId === selectedMember.id);
-                  const stats = calculateAttendanceStats(memberRecords, [selectedMember]);
-                  return (
-                    <>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                        <div className="card p-4 text-center border-theme-border-subtle bg-theme-surface-elevated">
-                          <div className="text-[10px] font-bold text-theme-muted uppercase tracking-wider mb-1">Attendance</div>
-                          <div className="text-2xl font-bold text-theme-accent">{stats.percentage}%</div>
-                        </div>
-                        <div className="card p-4 text-center border-theme-border-subtle bg-theme-surface-elevated">
-                          <div className="text-[10px] font-bold text-theme-muted uppercase tracking-wider mb-1">Present</div>
-                          <div className="text-2xl font-bold text-theme-present">{stats.present}</div>
-                        </div>
-                        <div className="card p-4 text-center border-theme-border-subtle bg-theme-surface-elevated">
-                          <div className="text-[10px] font-bold text-theme-muted uppercase tracking-wider mb-1">Late</div>
-                          <div className="text-2xl font-bold text-theme-late">{stats.late}</div>
-                        </div>
-                        <div className="card p-4 text-center border-theme-border-subtle bg-theme-surface-elevated">
-                          <div className="text-[10px] font-bold text-theme-muted uppercase tracking-wider mb-1">Absent</div>
-                          <div className="text-2xl font-bold text-theme-absent">{stats.absent}</div>
-                        </div>
-                      </div>
-                      
-                      {memberRecords.length > 0 ? (
-                        <IndividualAnalytics records={memberRecords} />
-                      ) : (
-                        <div className="text-center py-12 text-theme-text-secondary border border-dashed border-theme-border rounded-xl">
-                          No attendance history for this member.
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <MemberDetailsModal 
+        member={selectedMember}
+        onClose={() => setSelectedMember(null)}
+        records={records}
+        teams={teams}
+        isAdmin={true}
+        isSaving={isSaving}
+        onSaveMember={handleSaveMember}
+        currentUserId={user.uid}
+      />
     </Layout>
   );
 };

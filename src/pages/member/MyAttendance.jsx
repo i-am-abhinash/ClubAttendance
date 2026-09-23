@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { formatPercentage, calculateAttendanceStats } from '../../utils/analyticsUtils';
+
 import Layout from '../../components/common/Layout';
 import { useAuth } from '../../context/AuthContext';
 import { fetchAttendance } from '../../services/attendanceService';
-import { calculateAttendanceStats } from '../../utils/analyticsUtils';
+
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Calendar } from 'lucide-react';
 
@@ -52,7 +54,7 @@ const MyAttendance = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="card p-5 border-theme-border-subtle hover:border-theme-border transition-colors">
                 <p className="text-xs font-bold uppercase tracking-wider text-theme-muted mb-2">Overall Rate</p>
-                <p className="text-3xl font-bold text-theme-primary">{stats.percentage}%</p>
+                <p className="text-3xl font-bold text-theme-primary">{formatPercentage(stats.percentage)}%</p>
               </div>
               <div className="card p-5 border-theme-border-subtle hover:border-theme-border transition-colors">
                 <p className="text-xs font-bold uppercase tracking-wider text-theme-muted mb-2">Present</p>

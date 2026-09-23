@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { formatPercentage } from '../../utils/analyticsUtils';
+
+
 import { Link } from 'react-router-dom';
 import Layout from '../../components/common/Layout';
 import { useAuth } from '../../context/AuthContext';
@@ -95,7 +98,7 @@ const MemberDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard 
           title="Attendance Rate" 
-          value={`${stats.rate}%`} 
+          value={`${formatPercentage(stats.rate)}%`} 
           subtitle="Overall score" 
           icon={TrendingUp}
           colorClass="bg-theme-accent-light text-theme-accent" 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { MemberDetailsModal } from "../members/MemberDetailsModal";
 import RadialNavigation from './RadialNavigation';
 import { Search, Users, Briefcase, X, Fingerprint, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -13,6 +14,7 @@ const Layout = ({ children, title, description }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [allData, setAllData] = useState({ members: [], teams: [] });
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const searchRef = useRef(null);
 
   useEffect(() => {
@@ -89,47 +91,25 @@ const Layout = ({ children, title, description }) => {
         />
 
       {/* Top Header - Full Width */}
-      <header className="fixed top-0 left-0 right-0 h-[88px] w-full flex items-center gap-3 px-6 lg:px-10 border-b border-theme-border bg-theme-surface/80 backdrop-blur-md z-50" style={{backdropFilter:'blur(16px)', WebkitBackdropFilter:'blur(16px)', background: theme === 'dark' ? 'rgba(13,20,32,0.9)' : 'rgba(255,255,255,0.72)'}}>
-        
-        {/* Left: Logo + Title (shrinks before overlapping) */}
-        <div className="flex items-center gap-3 min-w-0 shrink">
-          <img 
-            src="/mitra-logo.jpg" 
-            alt="MITRA Logo" 
-            className={`h-9 sm:h-11 w-auto shrink-0 object-contain ${theme === 'dark' ? 'mix-blend-screen' : 'mix-blend-multiply'}`}
-            style={{ filter: theme === 'dark' ? 'invert(1) grayscale(100%) brightness(1.5)' : 'grayscale(100%) brightness(1.1)' }}
-          />
-          
-          <div className="flex flex-col justify-center border-l border-theme-border-solid pl-3 min-w-0">
-            <h1 className="text-[18px] sm:text-[20px] font-bold text-theme-text truncate leading-tight">
-              {getGreeting()}, {user?.name?.split(' ')[0]}
-            </h1>
-            <p className="text-[11px] sm:text-[12px] text-theme-text-secondary truncate hidden sm:block">
-              {title} - {description}
-            </p>
-          </div>
-        </div>
-
-        {/* Center: Search (flex-grow but capped) */}
-        <div className="flex-1" />
-
-        <div className="flex items-center gap-3 shrink-0">
-          {/* Search */}
-          {user?.role === 'Admin' && (
-            <div ref={searchRef} className="hidden md:block relative w-52 lg:w-64 z-50">
-              <div className="relative">
-                <Search className="w-4 h-4 text-theme-muted absolute left-3 top-1/2 -translate-y-1/2" />
+            <header className="fixed top-0 left-0 right-0 h-[88px] w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-6 lg:px-10 border-b border-theme-border bg-theme-surface/80 backdrop-blur-md z-50" style={{backdropFilter:'blur(16px)', WebkitBackdropFilter:'blur(16px)', background: theme === 'dark' ? 'rgba(13,20,32,0.9)' : 'rgba(255,255,255,0.72)'}}>
+        {isMobileSearchOpen ? (
+          <div className="flex-1 flex items-center gap-2 w-full h-full" ref={searchRef}>
+            <button onClick={() => setIsMobileSearchOpen(false)} className="p-2 text-theme-muted hover:text-theme-primary">
+              <X size={20} />
+            </button>
+            <div className="flex-1 relative">
                 <input 
                   type="text" 
                   placeholder="Search members or teams..." 
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   onFocus={() => setIsSearchFocused(true)}
-                  className="w-full border rounded-full py-2 pl-9 pr-8 text-[13px] text-theme-text focus:outline-none focus:ring-1 focus:ring-theme-text transition-all placeholder-theme-muted"
+                  className="w-full border rounded-full py-2 pl-4 pr-8 text-[13px] text-theme-text focus:outline-none focus:ring-1 focus:ring-theme-text transition-all placeholder-theme-muted"
                   style={{
                     background: theme === 'dark' ? '#111B2A' : 'rgba(255,255,255,0.80)',
                     borderColor: theme === 'dark' ? '#1E2A3A' : 'rgba(0,0,0,0.10)',
                   }}
+                  autoFocus
                 />
                 {searchQuery && (
                   <button 
@@ -139,10 +119,8 @@ const Layout = ({ children, title, description }) => {
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
-              </div>
-
-              {/* Search Results Dropdown */}
-              {isSearchFocused && searchQuery.trim() && (
+                {/* Search Results Dropdown Mobile */}
+                {isSearchFocused && searchQuery.trim() && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-theme-surface-higher border border-theme-border-subtle rounded-xl shadow-float overflow-hidden max-h-[400px] overflow-y-auto z-50 animate-in fade-in zoom-in-95 duration-200">
                   {searchResults.members.length === 0 && searchResults.teams.length === 0 ? (
                     <div className="p-4 text-center text-sm text-theme-text-secondary">
@@ -150,7 +128,6 @@ const Layout = ({ children, title, description }) => {
                     </div>
                   ) : (
                     <div className="py-2">
-                      {/* Teams Section */}
                       {searchResults.teams.length > 0 && (
                         <div className="mb-2">
                           <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-theme-muted flex items-center gap-1">
@@ -163,8 +140,6 @@ const Layout = ({ children, title, description }) => {
                           ))}
                         </div>
                       )}
-
-                      {/* Members Section */}
                       {searchResults.members.length > 0 && (
                         <div>
                           <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-theme-muted flex items-center gap-1">
@@ -177,23 +152,12 @@ const Layout = ({ children, title, description }) => {
                                 setSelectedMember(member);
                                 setIsSearchFocused(false);
                                 setSearchQuery('');
+                                setIsMobileSearchOpen(false);
                               }}
                               className="px-3 py-2 hover:bg-theme-bg cursor-pointer transition-colors border-b border-theme-border-subtle/30 last:border-0"
                             >
                               <div className="flex justify-between items-start">
                                 <span className="text-sm font-semibold text-theme-primary">{member.name}</span>
-                                {member.role !== 'Member' && (
-                                  <span className="text-[9px] uppercase tracking-wide bg-theme-accent/10 text-theme-accent px-1.5 py-0.5 rounded">
-                                    {member.role}
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2 mt-1 text-xs text-theme-text-secondary">
-                                <span className="flex items-center gap-1">
-                                  <Fingerprint className="w-3 h-3" /> {member.regdNo || 'No RegdNo'}
-                                </span>
-                                <span className="w-1 h-1 rounded-full bg-theme-border"></span>
-                                <span className="truncate">{getTeamName(member.teamId)}</span>
                               </div>
                             </div>
                           ))}
@@ -204,8 +168,129 @@ const Layout = ({ children, title, description }) => {
                 </div>
               )}
             </div>
-          )}
-          
+          </div>
+        ) : (
+          <>
+          {/* Left: Logo + Title */}
+          <div className="flex items-center gap-3 min-w-0 shrink">
+            <img 
+              src="/mitra-logo.jpg" 
+              alt="MITRA Logo" 
+              className={`h-9 sm:h-11 w-auto shrink-0 object-contain ${theme === 'dark' ? 'mix-blend-screen' : 'mix-blend-multiply'}`}
+              style={{ filter: theme === 'dark' ? 'invert(1) grayscale(100%) brightness(1.5)' : 'grayscale(100%) brightness(1.1)' }}
+            />
+            <div className="flex flex-col justify-center border-l border-theme-border-solid pl-3 min-w-0">
+              <h1 className="text-[18px] sm:text-[20px] font-bold text-theme-text truncate leading-tight">
+                {getGreeting()}, {user?.name?.split(' ')[0]}
+              </h1>
+              <p className="text-[11px] sm:text-[12px] text-theme-text-secondary truncate hidden sm:block">
+                {title} - {description}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex-1" />
+
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {user?.role === 'Admin' && (
+              <>
+                <button 
+                  onClick={() => setIsMobileSearchOpen(true)}
+                  className="md:hidden w-10 h-10 rounded-full flex items-center justify-center text-theme-text-secondary hover:text-theme-text hover:bg-theme-surface-secondary transition-all"
+                >
+                  <Search size={18} />
+                </button>
+                <div ref={searchRef} className="hidden md:block relative w-52 lg:w-64 z-50">
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-theme-muted absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input 
+                      type="text" 
+                      placeholder="Search members or teams..." 
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      onFocus={() => setIsSearchFocused(true)}
+                      className="w-full border rounded-full py-2 pl-9 pr-8 text-[13px] text-theme-text focus:outline-none focus:ring-1 focus:ring-theme-text transition-all placeholder-theme-muted"
+                      style={{
+                        background: theme === 'dark' ? '#111B2A' : 'rgba(255,255,255,0.80)',
+                        borderColor: theme === 'dark' ? '#1E2A3A' : 'rgba(0,0,0,0.10)',
+                      }}
+                    />
+                    {searchQuery && (
+                      <button 
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-theme-muted hover:text-theme-primary"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Search Results Dropdown */}
+                  {isSearchFocused && searchQuery.trim() && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-theme-surface-higher border border-theme-border-subtle rounded-xl shadow-float overflow-hidden max-h-[400px] overflow-y-auto z-50 animate-in fade-in zoom-in-95 duration-200">
+                      {searchResults.members.length === 0 && searchResults.teams.length === 0 ? (
+                        <div className="p-4 text-center text-sm text-theme-text-secondary">
+                          No results found for "{searchQuery}"
+                        </div>
+                      ) : (
+                        <div className="py-2">
+                          {/* Teams Section */}
+                          {searchResults.teams.length > 0 && (
+                            <div className="mb-2">
+                              <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-theme-muted flex items-center gap-1">
+                                <Briefcase className="w-3 h-3" /> Teams
+                              </div>
+                              {searchResults.teams.map(team => (
+                                <div key={team.id} className="px-3 py-2 hover:bg-theme-bg cursor-pointer transition-colors flex items-center justify-between">
+                                  <span className="text-sm font-semibold text-theme-primary">{team.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Members Section */}
+                          {searchResults.members.length > 0 && (
+                            <div>
+                              <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-theme-muted flex items-center gap-1">
+                                <Users className="w-3 h-3" /> Members
+                              </div>
+                              {searchResults.members.map(member => (
+                                <div 
+                                  key={member.id} 
+                                  onClick={() => {
+                                    setSelectedMember(member);
+                                    setIsSearchFocused(false);
+                                    setSearchQuery('');
+                                  }}
+                                  className="px-3 py-2 hover:bg-theme-bg cursor-pointer transition-colors border-b border-theme-border-subtle/30 last:border-0"
+                                >
+                                  <div className="flex justify-between items-start">
+                                    <span className="text-sm font-semibold text-theme-primary">{member.name}</span>
+                                    {member.role !== 'Member' && (
+                                      <span className="text-[9px] uppercase tracking-wide bg-theme-accent/10 text-theme-accent px-1.5 py-0.5 rounded">
+                                        {member.role}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-1 text-xs text-theme-text-secondary">
+                                    <span className="flex items-center gap-1">
+                                      <Fingerprint className="w-3 h-3" /> {member.regdNo || 'No RegdNo'}
+                                    </span>
+                                    <span className="w-1 h-1 rounded-full bg-theme-border"></span>
+                                    <span className="truncate">{getTeamName(member.teamId)}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
           <div className="hidden sm:block text-[13px] font-medium text-theme-text-secondary">
             {today}
           </div>
@@ -230,6 +315,8 @@ const Layout = ({ children, title, description }) => {
             </div>
           </div>
         </div>
+        </>
+        )}
       </header>
 
       <div className="flex-1 flex w-full pt-[88px]">
@@ -248,78 +335,16 @@ const Layout = ({ children, title, description }) => {
       </div>
 
       {/* Quick Profile Modal */}
-      {selectedMember && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-theme-surface/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-theme-surface border border-theme-border rounded-2xl w-full max-w-md shadow-float overflow-hidden animate-in zoom-in-95 duration-200">
-            {/* Header / Cover */}
-            <div className="h-24 bg-theme-surface-secondary relative">
-              <button 
-                onClick={() => setSelectedMember(null)}
-                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-theme-bg text-theme-text hover:bg-theme-absent transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            
-            <div className="px-6 pb-6 relative">
-              {/* Avatar */}
-              <div className="w-20 h-20 rounded-2xl bg-theme-surface-higher border-[3px] border-theme-surface flex items-center justify-center text-3xl font-bold text-theme-text shadow-lg absolute -top-10 left-6">
-                {selectedMember.name?.charAt(0).toUpperCase()}
-              </div>
-
-              <div className="pt-12">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h2 className="text-xl font-bold text-theme-primary">{selectedMember.name}</h2>
-                    <p className="text-theme-text-secondary text-sm flex items-center gap-2 mt-1">
-                      <Fingerprint className="w-3.5 h-3.5" /> {selectedMember.regdNo || 'No RegdNo'}
-                    </p>
-                  </div>
-                  <span className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md ${
-                    selectedMember.role === 'Admin' ? 'bg-theme-present/20 text-theme-present' :
-                    selectedMember.role === 'Team Leader' ? 'bg-theme-accent/20 text-theme-accent' :
-                    'bg-theme-surface-higher text-theme-muted border border-theme-border'
-                  }`}>
-                    {selectedMember.role}
-                  </span>
-                </div>
-
-                <div className="mt-6 space-y-4">
-                  <div className="bg-theme-bg/50 rounded-xl p-4 border border-theme-border-subtle">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-theme-muted mb-1">Team Assignment</div>
-                    <div className="text-sm font-semibold text-theme-primary flex items-center gap-2">
-                      <Briefcase className="w-4 h-4 text-theme-text" /> {getTeamName(selectedMember.teamId)}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-theme-bg/50 rounded-xl p-4 border border-theme-border-subtle">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-theme-muted mb-1">Branch</div>
-                      <div className="text-sm font-semibold text-theme-primary truncate">
-                        {selectedMember.branch || 'N/A'}
-                      </div>
-                    </div>
-                    <div className="bg-theme-bg/50 rounded-xl p-4 border border-theme-border-subtle">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-theme-muted mb-1">Status</div>
-                      <div className="text-sm font-semibold text-theme-primary">
-                        Active
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {selectedMember.email && (
-                    <div className="bg-theme-bg/50 rounded-xl p-4 border border-theme-border-subtle">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-theme-muted mb-1">Internal Email</div>
-                      <div className="text-sm font-mono text-theme-text-secondary truncate">
-                        {selectedMember.email}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      
+            {selectedMember && (
+        <MemberDetailsModal 
+          member={selectedMember}
+          onClose={() => setSelectedMember(null)}
+          teams={allData.teams}
+          isAdmin={user?.role === 'Admin'}
+          isSaving={false}
+          currentUserId={user?.uid}
+        />
       )}
     </div>
   );

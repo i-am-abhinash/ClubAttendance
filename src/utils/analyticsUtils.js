@@ -1,13 +1,24 @@
 import { isSameDay, isSameWeek, isSameMonth, parseISO, format, subMonths, startOfMonth, eachMonthOfInterval } from 'date-fns';
 
+export const calculateRate = (present, absent) => {
+  const validTotal = present + absent;
+  if (validTotal === 0) return 0;
+  return (present / validTotal) * 100;
+};
+
+export const formatPercentage = (value) => {
+  if (typeof value !== 'number' || isNaN(value)) return '0';
+  if (value % 1 === 0) return value.toString();
+  return value.toFixed(2);
+};
+
 export const calculateAttendanceStats = (records, members = []) => {
   const total = records.length;
   const present = records.filter(r => r.status === 'Present').length;
   const absent = records.filter(r => r.status === 'Absent').length;
   const late = records.filter(r => r.status === 'Late').length;
   
-  // Present = 1, Late = 0.5, Absent = 0
-  const percentage = total === 0 ? 0 : Math.round(((present + (late * 0.5)) / total) * 100);
+  const percentage = calculateRate(present, absent);
 
   // Generate trendData based on the last 6 months
   const now = new Date();
@@ -28,7 +39,8 @@ export const calculateAttendanceStats = (records, members = []) => {
       present: mPresent,
       absent: mAbsent,
       late: mLate,
-      total: monthRecords.length
+      total: mPresent + mAbsent + mLate,
+      rate: calculateRate(mPresent, mAbsent)
     };
   });
 
