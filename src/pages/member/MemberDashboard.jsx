@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { formatPercentage } from '../../utils/analyticsUtils';
+import { formatPercentage, calculateAttendanceRate } from '../../utils/analyticsUtils';
 
 
 import { Link } from 'react-router-dom';
@@ -55,7 +55,7 @@ const MemberDashboard = () => {
         });
 
         const total = present + late + absent;
-        const rate = total === 0 ? 0 : Math.round(((present + (late * 0.5)) / total) * 100);
+        const rate = calculateAttendanceRate(present, late, absent);
 
         setStats({ present, late, absent, total, rate });
         setRecords(sortedRecords);

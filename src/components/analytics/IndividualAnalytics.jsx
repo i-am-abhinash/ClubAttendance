@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { calculateRate, formatPercentage } from '../../utils/analyticsUtils';
+import { calculateAttendanceRate, formatPercentage } from '../../utils/analyticsUtils';
 
 import { 
   BarChart, Bar, LineChart, Line,
@@ -23,10 +23,11 @@ export const IndividualAnalytics = ({ records }) => {
       const date = parseISO(r.date);
       const monthKey = format(date, 'MMM yyyy'); // e.g. "Sep 2026"
       if (!monthMap[monthKey]) {
-        monthMap[monthKey] = { name: monthKey, dateVal: date, present: 0, absent: 0 };
+        monthMap[monthKey] = { name: monthKey, dateVal: date, present: 0, absent: 0, late: 0 };
       }
       if (r.status === 'Present') monthMap[monthKey].present += 1;
       if (r.status === 'Absent') monthMap[monthKey].absent += 1;
+      if (r.status === 'Late') monthMap[monthKey].late += 1;
     });
 
     return Object.values(monthMap)
@@ -38,7 +39,7 @@ export const IndividualAnalytics = ({ records }) => {
           fullMonth: d.name,
           present: d.present,
           absent: d.absent,
-          rate: total === 0 ? 0 : calculateRate(d.present, d.absent)
+          rate: total === 0 ? 0 : calculateAttendanceRate(d.present, d.late, d.absent)
         };
       });
   }, [records]);
@@ -55,6 +56,7 @@ export const IndividualAnalytics = ({ records }) => {
       }
       if (r.status === 'Present') weekMap[weekKey].present += 1;
       if (r.status === 'Absent') weekMap[weekKey].absent += 1;
+      if (r.status === 'Late') weekMap[weekKey].late += 1;
     });
 
     return Object.values(weekMap)
@@ -66,7 +68,7 @@ export const IndividualAnalytics = ({ records }) => {
           name: d.name,
           present: d.present,
           absent: d.absent,
-          rate: total === 0 ? 0 : calculateRate(d.present, d.absent)
+          rate: total === 0 ? 0 : calculateAttendanceRate(d.present, d.late, d.absent)
         };
       });
   }, [records]);

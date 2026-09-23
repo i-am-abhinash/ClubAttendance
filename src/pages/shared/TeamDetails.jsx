@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { MemberDetailsModal } from "../../components/members/MemberDetailsModal";
-import { formatPercentage } from '../../utils/analyticsUtils';
+import { formatPercentage, calculateAttendanceRate } from '../../utils/analyticsUtils';
 import { exportAttendanceToExcel } from '../../utils/exportUtils';
 
 
@@ -120,7 +120,13 @@ const TeamDetails = () => {
     }
 
     try {
-      await markAttendance(memberId, date, status, effectiveTeamId);
+      await markAttendance({
+        userId: memberId,
+        teamId: effectiveTeamId,
+        date,
+        status,
+        markedBy: user?.uid ?? 'unknown'
+      });
       // Clean optimistic flag
       setRecords(prev => prev.map(r => r.id === newRecord.id ? { ...r, _optimistic: false } : r));
     } catch (err) {
@@ -131,13 +137,10 @@ const TeamDetails = () => {
   };
 
   const getOverallAttendanceRate = () => {
-    if (records.length === 0) return 0;
-    let score = 0;
-    records.forEach(r => {
-      if (r.status === 'Present') score += 1;
-      if (r.status === 'Late') score += 0.5;
-    });
-    return Math.round((score / records.length) * 100);
+    const present = records.filter(r => r.status === 'Present').length;
+    const late = records.filter(r => r.status === 'Late').length;
+    const absent = records.filter(r => r.status === 'Absent').length;
+    return calculateAttendanceRate(present, late, absent);
   };
 
   if (loading) {
@@ -182,7 +185,7 @@ const TeamDetails = () => {
         </div>
         
         <button 
-          onClick={() => exportAttendanceToExcel(teamMembers, records, `${teamInfo?.name?.replace(/ /g, '_') || 'Team'}_Attendance_Report`)}
+          onClick={() => exportAttendanceToExcel(members, records, `${teamInfo?.name?.replace(/ /g, '_') || 'Team'}_Attendance_Report`)}
           className="btn-primary py-2 px-4 text-sm flex items-center gap-2"
         >
           <Download className="w-4 h-4" /> Export Excel

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { calculateRate, formatPercentage } from '../../utils/analyticsUtils';
+import { calculateAttendanceRate, formatPercentage } from '../../utils/analyticsUtils';
 
 import { 
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -33,7 +33,7 @@ export const ClubAnalytics = ({ records, teams }) => {
         
         return {
           ...d,
-          rate: calculateRate(d.present, d.absent)
+          rate: calculateAttendanceRate(d.present, d.late, d.absent)
         };
       });
   }, [records]);
@@ -57,7 +57,7 @@ export const ClubAnalytics = ({ records, teams }) => {
   const aCount = distributionData.find(d=>d.name==='Absent')?.value || 0;
   const lCount = distributionData.find(d=>d.name==='Late')?.value || 0;
   const validTotal = pCount + aCount + lCount;
-  const overallRate = validTotal === 0 ? 0 : calculateRate(pCount, aCount);
+  const overallRate = validTotal === 0 ? 0 : calculateAttendanceRate(pCount, lCount, aCount);
 
   const teamData = useMemo(() => {
     const tMap = {};
@@ -76,7 +76,7 @@ export const ClubAnalytics = ({ records, teams }) => {
       .map(t => {
         return {
           ...t,
-          rate: calculateRate(t.present, t.absent)
+          rate: calculateAttendanceRate(t.present, t.late, t.absent)
         };
       })
       .sort((a, b) => b.rate - a.rate); // Sort descending

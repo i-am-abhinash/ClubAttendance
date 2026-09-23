@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { calculateRate, formatPercentage } from '../../utils/analyticsUtils';
+import { calculateAttendanceRate, formatPercentage } from '../../utils/analyticsUtils';
 
 import { 
   BarChart, Bar, LineChart, Line,
@@ -56,13 +56,13 @@ export const TeamAnalytics = ({ records, members }) => {
     return Object.values(dateMap)
       .sort((a, b) => new Date(a.date) - new Date(b.date))
       .map(d => {
-        const total = d.present + d.absent;
+        const total = d.present + d.absent + (d.late || 0);
         return {
           dateVal: d.date,
           date: format(parseISO(d.date), 'MMM d'),
           present: d.present,
           absent: d.absent,
-          rate: total === 0 ? 0 : calculateRate(d.present, d.absent)
+          rate: calculateAttendanceRate(d.present, d.late || 0, d.absent)
         };
       });
   }, [records]);
@@ -81,14 +81,14 @@ export const TeamAnalytics = ({ records, members }) => {
       }
     });
     return Object.values(mMap)
-      .filter(m => m.present + m.absent > 0)
+      .filter(m => m.present + m.absent + m.late > 0)
       .map(m => {
-        const total = m.present + m.absent;
+        const total = m.present + m.absent + (m.late || 0);
         return {
           name: m.name,
           present: m.present,
           absent: m.absent,
-          rate: calculateRate(m.present, m.absent)
+          rate: calculateAttendanceRate(m.present, m.late || 0, m.absent)
         };
       })
       .sort((a, b) => b.rate - a.rate);
